@@ -1,0 +1,19 @@
+{
+  "name": "feldspar",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/anvilresearch/feldspar.git"
+  },
+  "author": "Anvil Research, Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/anvilresearch/feldspar/issues"
+  },
+  "homepage": "https://gitlab.com/anvilresearch/feldspar#README"
+}

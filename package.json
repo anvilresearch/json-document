@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://gitlab.com/anvilresearch/feldspar/issues"
   },
-  "homepage": "https://gitlab.com/anvilresearch/feldspar#README"
+  "homepage": "https://gitlab.com/anvilresearch/feldspar#README",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "sinon": "^1.17.3",
+    "sinon-chai": "^2.8.0"
+  }
 }

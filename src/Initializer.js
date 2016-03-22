@@ -31,41 +31,36 @@ class Initializer {
         let c = chain.concat([key])
         let descriptor = properties[key]
 
+        // operation
+        let operation = {
+          name: 'start',
+          key,
+          container: c.join('.'),
+          chain: c,
+        }
+
+        // console.log(key, descriptor)
+
+        if (descriptor.private) {
+          operation.private = true
+        }
+
+        if (descriptor.default) {
+          operation.default = descriptor.default
+        }
+
         // this descriptor is for a property
         if (!descriptor.properties) {
-
-          // add default value logic
-          if (descriptor.default) {
-            operations.set(c, {
-              name: 'simpleDefault',
-              key: key,
-              container: c.join('.'),
-              chain: c,
-              pointer: c.join('.'),
-              default: JSON.stringify(descriptor.default)
-            })
-
-          // simple assignment
-          } else {
-            operations.set(c, {
-              name: 'simple',
-              key: key,
-              container: c.join('.'),
-              chain: c,
-              pointer: c.join('.')
-            })
-          }
+          operation.pointer = c.join('.')
+          
+          // assignment
+          operations.set(c, operation)
 
         // this is a nested schema
         } else {
           if (!operations.get(c)) {
-            operations.set(c, {
-              name: 'ensureContainer',
-              key,
-              container: c.join('.'),
-              chain: c
-              // this is where the magic happens
-            })
+            operation.name = 'ensureContainer'
+            operations.set(c, operation)
           }
 
           // recurse
@@ -81,24 +76,50 @@ class Initializer {
    * Compile
    */
   compile () {
-    let block = ''
+    let block = 'options = options || {}\n'
 
     this.operations.forEach(operation => {
       block += this[operation.name](operation)
     })
 
-    return new Function('target', 'source', block)
+    return new Function('target', 'source', 'options', block)
   }
 
-  /**
-   * Simple assignment
-   */
-  simple (operation) {
+  start (operation) {
+    if (operation.private) {
+      return this.private(operation)
+    } else {
+      return this.assign(operation)
+    }
+  }
+
+  private (operation) {
+    return `
+    if (options.private === true) {
+      ${this.assign(operation)}
+    }
+    `
+  }
+
+  assign (operation) {
     return `
     if (${this.condition(operation)}) {
       target.${operation.pointer} = source.${operation.pointer}
-    }
+    } ${operation.default ? this.defaults(operation) : ''}
     `
+  }
+
+  defaults (operation) {
+    if (typeof operation.default === 'function') {
+      operation.default = `(${operation.default.toString()})()`
+    } else {
+      operation.default = JSON.stringify(operation.default)
+    }
+    return `
+    else if (options.defaults !== false) {
+      target.${operation.pointer} = ${operation.default}
+    }
+    ` 
   }
 
   condition (operation) {
@@ -117,19 +138,6 @@ class Initializer {
       : `source.${pointer} !== undefined`
 
     return condition
-  }
-
-  /**
-   * Simple assignment with default value
-   */
-  simpleDefault (operation) {
-    return `
-    if (source.${operation.pointer} !== undefined) {
-      target.${operation.pointer} = source.${operation.pointer}
-    } else {
-      target.${operation.pointer} = ${operation.default}
-    }
-    `
   }
 
   /**

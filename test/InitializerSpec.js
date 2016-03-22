@@ -24,7 +24,7 @@ const Initializer = require('../src/Initializer')
 /**
  *
  */
-describe.only('Initializer', () => {
+describe('Initializer', () => {
 
   let schema = {
     properties: {
@@ -57,7 +57,7 @@ describe.only('Initializer', () => {
       },
       e: {
         type: 'string',
-        default: () => 'default'
+        default: () => 'defaultfn'
       },
       after: {
         type: 'string',
@@ -66,7 +66,7 @@ describe.only('Initializer', () => {
     }
   }
 
-  describe('generated function', () => {
+  describe.only('generated function', () => {
     let initializer, source, target, fn
 
     beforeEach(() => {
@@ -101,7 +101,7 @@ describe.only('Initializer', () => {
     })
 
     it('should optionally assign private properties', () => {
-      fn(target, source)
+      fn(target, source, { private: true })
       target.c.should.equal('private')
     })
 
@@ -127,11 +127,11 @@ describe.only('Initializer', () => {
         properties: {
           a: { type: 'string' },
           b: { type: 'string', default: 'bbbb' },
-          c: { type: 'string', default: 'c' },
+          c: { type: 'string', default: 'c', private: true },
           d: {
             properties: {
               e: { type: 'string' },
-              f: { type: 'string', default: 'fff' },
+              f: { type: 'string', default: function () { return 'fff' } },
               g: {
                 properties: {
                   h: { type: 'string' }

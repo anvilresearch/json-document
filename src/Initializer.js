@@ -1,11 +1,6 @@
 'use strict'
 
 /**
- * Module dependencies
- */
-const path = require('path')
-
-/**
  * Initializer
  */
 class Initializer {
@@ -85,11 +80,16 @@ class Initializer {
       block += this[operation.fn](operation)
     })
 
-    // console.log(block)
-
     return new Function('target', 'source', 'options', block)
   }
 
+  /**
+   * Grammar
+   */
+
+  /**
+   * Property
+   */
   property (operation) {
     if (operation.private) {
       return this.private(operation)
@@ -98,6 +98,9 @@ class Initializer {
     }
   }
 
+  /**
+   * Private
+   */
   private (operation) {
     return `
     if (options.private) {
@@ -106,6 +109,9 @@ class Initializer {
     `
   }
 
+  /**
+   * Assign
+   */
   assign (operation) {
     return `
     if (${this.condition(operation)}) {
@@ -114,9 +120,14 @@ class Initializer {
     `
   }
 
+  /**
+   * Immutable assign
+   */
   immutableAssign (operation) {
     let target = 'target'
     let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
+
+    // add reference to nested property container
     if (ref) {
       target = `${target}.${ref}`
     }
@@ -132,6 +143,9 @@ class Initializer {
     `
   }
 
+  /**
+   * Simple assign
+   */
   simpleAssign (operation) {
     return `
     if (${this.condition(operation)}) {
@@ -140,6 +154,9 @@ class Initializer {
     `
   }
 
+  /**
+   * Defaults
+   */
   defaults (operation) {
     if (typeof operation.default === 'function') {
       operation.defaultString = `(${operation.default.toString()})()`
@@ -154,13 +171,21 @@ class Initializer {
     `
   }
 
+  /**
+   * Simple default
+   */
   simpleDefault (operation) {
     return `target.${operation.ref} = ${operation.defaultString}`
   }
 
+  /**
+   * Immutable default
+   */
   immutableDefault (operation) {
     let target = 'target'
     let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
+
+    // add reference to nested property container
     if (ref) {
       target = `${target}.${ref}`
     }
@@ -174,6 +199,9 @@ class Initializer {
     `
   }
 
+  /**
+   * Condition
+   */
   condition (operation) {
     let chain = operation.chain
     let ref = operation.ref

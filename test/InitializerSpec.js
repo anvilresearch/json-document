@@ -41,10 +41,6 @@ describe('Initializer', () => {
       exists: {
         type: 'string'
       },
-      immutable: {
-        type: 'string',
-        immutable: true
-      },
       setter: {
         type: 'string',
         set: (data) => {
@@ -58,6 +54,19 @@ describe('Initializer', () => {
       e: {
         type: 'string',
         default: () => 'defaultfn'
+      },
+      f: {
+        type: 'string',
+        immutable: true
+      },
+      g: {
+        properties: {
+          h: {
+            type: 'string',
+            immutable: true,
+            default: 'h'
+          }
+        }
       },
       after: {
         type: 'string',
@@ -79,7 +88,10 @@ describe('Initializer', () => {
         a: 'a',
         b: '',
         c: 'private',
-        immutable: 'immutable',
+        f: 'immutable',
+        g: {
+          h: 'hello world'
+        },
         setter: 'set',
         after: 'after'
       }
@@ -105,8 +117,21 @@ describe('Initializer', () => {
       target.c.should.equal('private')
     })
 
-    it('should define immutable properties')
+    it('should define immutable properties', () => {
+      fn(target, source, {})
+      expect(
+        function () { target.f = 'f' }
+      ).to.throw(Error)
+    })
+
     it('should set a property from a setter method')
+    it('should set a default immutable property', () => {
+      fn(target, source)
+      expect(
+        function () { target.g.h = 'hello world' }
+      ).to.throw(Error)
+    })
+
     it('should set a property from a default value', () => {
       fn(target, source)
       target.d.should.equal('default')

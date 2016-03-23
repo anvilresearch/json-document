@@ -95,7 +95,7 @@ class Initializer {
 
   private (operation) {
     return `
-    if (options.private === true) {
+    if (options.private) {
       ${this.assign(operation)}
     }
     `

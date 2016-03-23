@@ -49,6 +49,10 @@ class Initializer {
           operation.default = descriptor.default
         }
 
+        if (descriptor.immutable) {
+          operation.immutable = true
+        }
+
         // this descriptor is for a property
         if (!descriptor.properties) {
 
@@ -81,6 +85,8 @@ class Initializer {
       block += this[operation.fn](operation)
     })
 
+    // console.log(block)
+
     return new Function('target', 'source', 'options', block)
   }
 
@@ -103,6 +109,32 @@ class Initializer {
   assign (operation) {
     return `
     if (${this.condition(operation)}) {
+      ${operation.immutable ? this.immutableAssign(operation) : this.simpleAssign(operation)}
+    } ${operation.default ? this.defaults(operation) : ''}
+    `
+  }
+
+  immutableAssign (operation) {
+    let target = 'target'
+    let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
+    if (ref) {
+      target = `${target}.${ref}`
+    }
+
+    return `
+    if (${this.condition(operation)}) {
+      Object.defineProperty(${target}, '${operation.key}', {
+        value: source.${operation.ref},
+        writable: ${!operation.immutable},
+        enumerable: true
+      })
+    } ${operation.default ? this.defaults(operation) : ''}
+    `
+  }
+
+  simpleAssign (operation) {
+    return `
+    if (${this.condition(operation)}) {
       target.${operation.ref} = source.${operation.ref}
     } ${operation.default ? this.defaults(operation) : ''}
     `
@@ -110,14 +142,35 @@ class Initializer {
 
   defaults (operation) {
     if (typeof operation.default === 'function') {
-      operation.default = `(${operation.default.toString()})()`
+      operation.defaultString = `(${operation.default.toString()})()`
     } else {
-      operation.default = JSON.stringify(operation.default)
+      operation.defaultString = JSON.stringify(operation.default)
     }
+
     return `
     else if (options.defaults !== false) {
-      target.${operation.ref} = ${operation.default}
+      ${operation.immutable ? this.immutableDefault(operation) : this.simpleDefault(operation)}
     }
+    `
+  }
+
+  simpleDefault (operation) {
+    return `target.${operation.ref} = ${operation.defaultString}`
+  }
+
+  immutableDefault (operation) {
+    let target = 'target'
+    let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
+    if (ref) {
+      target = `${target}.${ref}`
+    }
+
+    return `
+    Object.defineProperty(${target}, '${operation.key}', {
+      value: ${operation.defaultString},
+      writable: ${!operation.immutable},
+      enumerable: true
+    })
     `
   }
 

@@ -28,15 +28,15 @@ class Initializer {
       let properties = schema.properties
 
       Object.keys(properties).forEach(key => {
-        let c = chain.concat([key])
+        let refchain = chain.concat([key])
         let descriptor = properties[key]
 
         // operation
         let operation = {
-          name: 'start',
+          fn: 'property',
           key,
-          container: c.join('.'),
-          chain: c,
+          ref: refchain.join('.'),
+          chain: refchain,
         }
 
         // console.log(key, descriptor)
@@ -51,20 +51,19 @@ class Initializer {
 
         // this descriptor is for a property
         if (!descriptor.properties) {
-          operation.pointer = c.join('.')
 
           // assignment
-          operations.set(c, operation)
+          operations.set(refchain, operation)
 
         // this is a nested schema
         } else {
-          if (!operations.get(c)) {
-            operation.name = 'ensureContainer'
-            operations.set(c, operation)
+          if (!operations.get(refchain)) {
+            operation.fn = 'ensureContainer'
+            operations.set(refchain, operation)
           }
 
           // recurse
-          parser(descriptor, c)
+          parser(descriptor, refchain)
         }
       })
     }
@@ -79,13 +78,13 @@ class Initializer {
     let block = 'options = options || {}\n'
 
     this.operations.forEach(operation => {
-      block += this[operation.name](operation)
+      block += this[operation.fn](operation)
     })
 
     return new Function('target', 'source', 'options', block)
   }
 
-  start (operation) {
+  property (operation) {
     if (operation.private) {
       return this.private(operation)
     } else {
@@ -104,7 +103,7 @@ class Initializer {
   assign (operation) {
     return `
     if (${this.condition(operation)}) {
-      target.${operation.pointer} = source.${operation.pointer}
+      target.${operation.ref} = source.${operation.ref}
     } ${operation.default ? this.defaults(operation) : ''}
     `
   }
@@ -117,14 +116,14 @@ class Initializer {
     }
     return `
     else if (options.defaults !== false) {
-      target.${operation.pointer} = ${operation.default}
+      target.${operation.ref} = ${operation.default}
     }
     `
   }
 
   condition (operation) {
     let chain = operation.chain
-    let pointer = operation.pointer
+    let ref = operation.ref
 
     let guards = chain.reduce((result, key, index) => {
       if (index > 0) {
@@ -134,22 +133,22 @@ class Initializer {
     }, []).join(' && ')
 
     let condition = (guards)
-      ? `${guards} && source.${pointer} !== undefined`
-      : `source.${pointer} !== undefined`
+      ? `${guards} && source.${ref} !== undefined`
+      : `source.${ref} !== undefined`
 
     return condition
   }
 
   /**
-   * Ensure container object exists
+   * Ensure object reference exists
    */
   ensureContainer (operation) {
     return `
     // should this check the source object for
-    // presence of the container or some default property
+    // presence of the reference or some default property
     // before adding this property to the source?
-    if (!target.${operation.container}) {
-      target.${operation.container} = {}
+    if (!target.${operation.ref}) {
+      target.${operation.ref} = {}
     }
     `
   }

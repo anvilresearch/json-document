@@ -116,7 +116,12 @@ describe('Initializer', () => {
       fn(target, source)
       target.e.should.equal('defaultfn')
     })
-    it('should optionally skip default assignment')
+
+    it('should optionally skip default assignment', () => {
+      fn(target, source, { defaults: false })
+      expect(target.d).to.equal(undefined)
+    })
+
     it('should invoke an "after" method')
   })
 

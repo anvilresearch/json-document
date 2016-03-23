@@ -52,7 +52,7 @@ class Initializer {
         // this descriptor is for a property
         if (!descriptor.properties) {
           operation.pointer = c.join('.')
-          
+
           // assignment
           operations.set(c, operation)
 
@@ -119,7 +119,7 @@ class Initializer {
     else if (options.defaults !== false) {
       target.${operation.pointer} = ${operation.default}
     }
-    ` 
+    `
   }
 
   condition (operation) {

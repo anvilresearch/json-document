@@ -132,26 +132,18 @@ class Initializer {
       target = `${target}.${ref}`
     }
 
-    return `
-    if (${this.condition(operation)}) {
-      Object.defineProperty(${target}, '${operation.key}', {
+    return `Object.defineProperty(${target}, '${operation.key}', {
         value: source.${operation.ref},
         writable: ${!operation.immutable},
         enumerable: true
-      })
-    } ${operation.default ? this.defaults(operation) : ''}
-    `
+      })`
   }
 
   /**
    * Simple assign
    */
   simpleAssign (operation) {
-    return `
-    if (${this.condition(operation)}) {
-      target.${operation.ref} = source.${operation.ref}
-    } ${operation.default ? this.defaults(operation) : ''}
-    `
+    return `target.${operation.ref} = source.${operation.ref}`
   }
 
   /**
@@ -164,11 +156,9 @@ class Initializer {
       operation.defaultString = JSON.stringify(operation.default)
     }
 
-    return `
-    else if (options.defaults !== false) {
+    return `else if (options.defaults !== false) {
       ${operation.immutable ? this.immutableDefault(operation) : this.simpleDefault(operation)}
-    }
-    `
+    }`
   }
 
   /**
@@ -190,13 +180,11 @@ class Initializer {
       target = `${target}.${ref}`
     }
 
-    return `
-    Object.defineProperty(${target}, '${operation.key}', {
-      value: ${operation.defaultString},
-      writable: ${!operation.immutable},
-      enumerable: true
-    })
-    `
+    return `Object.defineProperty(${target}, '${operation.key}', {
+        value: ${operation.defaultString},
+        writable: ${!operation.immutable},
+        enumerable: true
+      })`
   }
 
   /**
@@ -224,10 +212,10 @@ class Initializer {
    * Ensure object reference exists
    */
   ensureContainer (operation) {
-    return `
     // should this check the source object for
     // presence of the reference or some default property
     // before adding this property to the source?
+    return `
     if (!target.${operation.ref}) {
       target.${operation.ref} = {}
     }

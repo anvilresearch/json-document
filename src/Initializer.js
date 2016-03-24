@@ -28,13 +28,11 @@ class Initializer {
 
         // operation
         let operation = {
-          fn: 'property',
           key,
+          fn: 'property',
           ref: refchain.join('.'),
           chain: refchain,
         }
-
-        // console.log(key, descriptor)
 
         if (descriptor.private) {
           operation.private = true
@@ -46,6 +44,10 @@ class Initializer {
 
         if (descriptor.immutable) {
           operation.immutable = true
+        }
+
+        if (descriptor.set) {
+          operation.setter = descriptor.set
         }
 
         // this descriptor is for a property
@@ -113,9 +115,19 @@ class Initializer {
    * Assign
    */
   assign (operation) {
+    let assignment
+
+    if (operation.setter) {
+      assignment = this.setterAssign(operation)
+    } else if (operation.immutable) {
+      assignment = this.immutableAssign(operation)
+    } else {
+      assignment = this.simpleAssign(operation)
+    }
+
     return `
     if (${this.condition(operation)}) {
-      ${operation.immutable ? this.immutableAssign(operation) : this.simpleAssign(operation)}
+      ${assignment}
     } ${operation.default ? this.defaults(operation) : ''}
     `
   }
@@ -147,9 +159,22 @@ class Initializer {
   }
 
   /**
+   * Setter assign
+   */
+  setterAssign (operation) {
+    return `target.${operation.ref} = (${operation.setter.toString()})(source)`
+  }
+
+  /**
    * Defaults
    */
   defaults (operation) {
+    // TODO:
+    // It's not optimal to inline the function definition
+    // because the function gets created each time the
+    // initializer function is run. Rather, we need to be
+    // able to reference functions by symbols/methods available to
+    // the definition scope.
     if (typeof operation.default === 'function') {
       operation.defaultString = `(${operation.default.toString()})()`
     } else {

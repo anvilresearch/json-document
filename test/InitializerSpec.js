@@ -78,7 +78,9 @@ describe('Initializer', () => {
       },
       m: {
         type: 'string',
-        after: data => `${data.m} assignment`
+        after: function (data) {
+          this.after = `${data.m} assignment`
+        }
       }
     }
   }
@@ -102,7 +104,7 @@ describe('Initializer', () => {
         },
         i: { j: { k: 'k' } },
         l: 'foo',
-        after: 'after'
+        m: 'after'
       }
     })
 
@@ -167,7 +169,7 @@ describe('Initializer', () => {
 
     it('should invoke an "after" method', () => {
       fn(target, source)
-      target.m.should.equal('after')
+      target.after.should.equal('after assignment')
     })
   })
 

@@ -34,6 +34,9 @@ class Initializer {
           chain: refchain,
         }
 
+        // TODO:
+        // The repetitious nature of these conditionals is becoming absurd.
+        // Consider using Object.assign(operation, descriptor)
         if (descriptor.private) {
           operation.private = true
         }
@@ -48,6 +51,10 @@ class Initializer {
 
         if (descriptor.set) {
           operation.setter = descriptor.set
+        }
+
+        if (descriptor.after) {
+          operation.after = descriptor.after
         }
 
         // this descriptor is for a property
@@ -125,11 +132,17 @@ class Initializer {
       assignment = this.simpleAssign(operation)
     }
 
-    return `
+    assignment = `
     if (${this.condition(operation)}) {
       ${assignment}
     } ${operation.default ? this.defaults(operation) : ''}
     `
+
+    if (operation.after) {
+      assignment += this.afterAssign(operation)
+    }
+
+    return assignment
   }
 
   /**
@@ -163,6 +176,18 @@ class Initializer {
    */
   setterAssign (operation) {
     return `target.${operation.ref} = (${operation.setter.toString()})(source)`
+  }
+
+  /**
+   * After assign
+   * TODO:
+   * These invocations should take place at the end of the
+   * generated function
+   */
+  afterAssign (operation) {
+    return `
+    (${operation.after.toString()}).call(target, source)
+    `
   }
 
   /**

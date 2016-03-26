@@ -72,8 +72,8 @@ describe('Initializer', () => {
       },
       l: {
         type: 'string',
-        set: (data) => {
-          return this.l = `${data.l} bar`
+        set: function (data) {
+          return `${data.l} bar`
         }
       },
       m: {

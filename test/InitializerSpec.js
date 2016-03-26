@@ -85,7 +85,7 @@ describe('Initializer', () => {
     }
   }
 
-  describe.only('generated function', () => {
+  describe('generated function', () => {
     let initializer, source, target, fn
 
     beforeEach(() => {

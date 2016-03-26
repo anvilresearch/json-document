@@ -1,11 +1,14 @@
 'use strict'
 
 /**
+<<<<<<< HEAD
  * Module dependencies
  */
 const path = require('path')
 
 /**
+=======
+>>>>>>> compilers
  * Initializer
  */
 class Initializer {
@@ -33,12 +36,15 @@ class Initializer {
 
         // operation
         let operation = {
-          fn: 'property',
           key,
+          fn: 'property',
           ref: refchain.join('.'),
           chain: refchain,
         }
 
+        // TODO:
+        // The repetitious nature of these conditionals is becoming absurd.
+        // Consider using Object.assign(operation, descriptor)
         if (descriptor.private) {
           operation.private = true
         }
@@ -49,6 +55,14 @@ class Initializer {
 
         if (descriptor.immutable) {
           operation.immutable = true
+        }
+
+        if (descriptor.set) {
+          operation.setter = descriptor.set
+        }
+
+        if (descriptor.after) {
+          operation.after = descriptor.after
         }
 
         // this descriptor is for a property
@@ -86,6 +100,13 @@ class Initializer {
     return new Function('target', 'source', 'options', block)
   }
 
+  /**
+   * Grammar
+   */
+
+  /**
+   * Property
+   */
   property (operation) {
     if (operation.private) {
       return this.private(operation)
@@ -94,6 +115,9 @@ class Initializer {
     }
   }
 
+  /**
+   * Private
+   */
   private (operation) {
     return `
     if (options.private) {
@@ -102,74 +126,128 @@ class Initializer {
     `
   }
 
+  /**
+   * Assign
+   */
   assign (operation) {
-    return `
+    let assignment
+
+    if (operation.setter) {
+      assignment = this.setterAssign(operation)
+    } else if (operation.immutable) {
+      assignment = this.immutableAssign(operation)
+    } else {
+      assignment = this.simpleAssign(operation)
+    }
+
+    assignment = `
     if (${this.condition(operation)}) {
-      ${operation.immutable ? this.immutableAssign(operation) : this.simpleAssign(operation)}
+      ${assignment}
     } ${operation.default ? this.defaults(operation) : ''}
     `
+
+    if (operation.after) {
+      assignment += this.afterAssign(operation)
+    }
+
+    return assignment
   }
 
+  /**
+   * Immutable assign
+   */
   immutableAssign (operation) {
     let target = 'target'
     let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
+
+    // add reference to nested property container
     if (ref) {
       target = `${target}.${ref}`
     }
 
-    return `
-    if (${this.condition(operation)}) {
-      Object.defineProperty(${target}, '${operation.key}', {
+    return `Object.defineProperty(${target}, '${operation.key}', {
         value: source.${operation.ref},
         writable: ${!operation.immutable},
         enumerable: true
-      })
-    } ${operation.default ? this.defaults(operation) : ''}
-    `
+      })`
   }
 
+  /**
+   * Simple assign
+   */
   simpleAssign (operation) {
+    return `target.${operation.ref} = source.${operation.ref}`
+  }
+
+  /**
+   * Setter assign
+   */
+  setterAssign (operation) {
+    return `target.${operation.ref} = (${operation.setter.toString()})(source)`
+  }
+
+  /**
+   * After assign
+   * TODO:
+   * These invocations should take place at the end of the
+   * generated function
+   */
+  afterAssign (operation) {
     return `
-    if (${this.condition(operation)}) {
-      target.${operation.ref} = source.${operation.ref}
-    } ${operation.default ? this.defaults(operation) : ''}
+    (${operation.after.toString()}).call(target, source)
     `
   }
 
+  /**
+   * Defaults
+   */
   defaults (operation) {
+    // TODO:
+    // It's not optimal to inline the function definition
+    // because the function gets created each time the
+    // initializer function is run. Rather, we need to be
+    // able to reference functions by symbols/methods available to
+    // the definition scope.
     if (typeof operation.default === 'function') {
       operation.defaultString = `(${operation.default.toString()})()`
     } else {
       operation.defaultString = JSON.stringify(operation.default)
     }
 
-    return `
-    else if (options.defaults !== false) {
+    return `else if (options.defaults !== false) {
       ${operation.immutable ? this.immutableDefault(operation) : this.simpleDefault(operation)}
-    }
-    `
+    }`
   }
 
+  /**
+   * Simple default
+   */
   simpleDefault (operation) {
     return `target.${operation.ref} = ${operation.defaultString}`
   }
 
+  /**
+   * Immutable default
+   */
   immutableDefault (operation) {
     let target = 'target'
     let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
+
+    // add reference to nested property container
     if (ref) {
       target = `${target}.${ref}`
     }
 
-    return `
-    Object.defineProperty(${target}, '${operation.key}', {
-      value: ${operation.defaultString},
-      writable: ${!operation.immutable},
-      enumerable: true
-    })
-    `
+    return `Object.defineProperty(${target}, '${operation.key}', {
+        value: ${operation.defaultString},
+        writable: ${!operation.immutable},
+        enumerable: true
+      })`
   }
 
+  /**
+   * Condition
+   */
   condition (operation) {
     let chain = operation.chain
     let ref = operation.ref
@@ -192,10 +270,10 @@ class Initializer {
    * Ensure object reference exists
    */
   ensureContainer (operation) {
-    return `
     // should this check the source object for
     // presence of the reference or some default property
     // before adding this property to the source?
+    return `
     if (!target.${operation.ref}) {
       target.${operation.ref} = {}
     }

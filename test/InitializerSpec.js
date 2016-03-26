@@ -38,15 +38,6 @@ describe('Initializer', () => {
         type: 'string',
         private: true
       },
-      exists: {
-        type: 'string'
-      },
-      setter: {
-        type: 'string',
-        set: (data) => {
-          return this.setter = `${data.setter}ter`
-        }
-      },
       d: {
         type: 'string',
         default: 'default'
@@ -68,9 +59,28 @@ describe('Initializer', () => {
           }
         }
       },
-      after: {
+      i: {
+        properties: {
+          j: {
+            properties: {
+              k: {
+                type: 'string'
+              }
+            }
+          }
+        }
+      },
+      l: {
         type: 'string',
-        after: data => `${data.after} assignment`
+        set: function (data) {
+          return `${data.l} bar`
+        }
+      },
+      m: {
+        type: 'string',
+        after: function (data) {
+          this.after = `${data.m} assignment`
+        }
       }
     }
   }
@@ -92,8 +102,9 @@ describe('Initializer', () => {
         g: {
           h: 'hello world'
         },
-        setter: 'set',
-        after: 'after'
+        i: { j: { k: 'k' } },
+        l: 'foo',
+        m: 'after'
       }
     })
 
@@ -124,14 +135,6 @@ describe('Initializer', () => {
       ).to.throw(Error)
     })
 
-    it('should set a property from a setter method')
-    it('should set a default immutable property', () => {
-      fn(target, source)
-      expect(
-        function () { target.g.h = 'hello world' }
-      ).to.throw(Error)
-    })
-
     it('should set a property from a default value', () => {
       fn(target, source)
       target.d.should.equal('default')
@@ -147,10 +150,44 @@ describe('Initializer', () => {
       expect(target.d).to.equal(undefined)
     })
 
-    it('should invoke an "after" method')
+    it('should set a default immutable property', () => {
+      fn(target, source)
+      expect(
+        function () { target.g.h = 'hello world' }
+      ).to.throw(Error)
+    })
+
+    it('should set a nested property on target from source', () => {
+      fn(target, source)
+      target.i.j.k.should.equal('k')
+    })
+
+    it('should set a property from a setter method', () => {
+      fn(target, source)
+      target.l.should.equal('foo bar')
+    })
+
+    it('should invoke an "after" method', () => {
+      fn(target, source)
+      target.after.should.equal('after assignment')
+    })
   })
 
   describe('parse', () => {
+
+    it('should identify operations')
+    it('should set operation key')
+    it('should set operation fn')
+    it('should set operation ref for root object members')
+    it('should set operation ref for nested object members')
+    it('should set operation chain for root object members')
+    it('should set operation chain for nested object members')
+    it('should flag private property operations')
+    it('should flag default value operations')
+    it('should flag immutable properties')
+    it('should flag setter operations')
+    it('should group operations by container')
+
 
     it('should do stuff', () => {
       let schema = {

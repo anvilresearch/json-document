@@ -17,6 +17,7 @@
   },
   "homepage": "https://gitlab.com/anvilresearch/feldspar#README",
   "devDependencies": {
+    "benchmark": "^2.1.0",
     "chai": "^3.5.0",
     "sinon": "^1.17.3",
     "sinon-chai": "^2.8.0"

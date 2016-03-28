@@ -90,6 +90,11 @@ describe.only('Pointer', () => {
       let pointer = new Pointer('/')
       pointer.expr.should.equal('/')
     })
+
+    it('should parse the expression', () => {
+      let pointer = new Pointer('/foo/bar')
+      pointer.tokens.should.eql(['foo', 'bar'])
+    })
   })
 
   /**
@@ -152,12 +157,40 @@ describe.only('Pointer', () => {
    *    transformation).
    */
 
-  describe('escape', () => {})
+  describe('escape', () => {
+    let pointer
+
+    beforeEach(() => {
+      pointer = new Pointer('')
+    })
+
+    it('should transform each occurence of "/" to "~1"', () => {
+      pointer.escape('/foo/bar').should.equal('~1foo~1bar')
+    })
+
+    it('should transform each occurence of "~" to "~0"', () => {
+      pointer.escape('/~foo/bar~').should.equal('~1~0foo~1bar~0')
+    })
+  })
 
   describe('unescape', () => {
-    it('should transform each occurence of "~1" to "/"')
-    it('should transform each occurence of "~0" to "~"')
-    it('should not transform "~01" to "/"')
+    let pointer
+
+    beforeEach(() => {
+      pointer = new Pointer('')
+    })
+
+    it('should transform each occurence of "~1" to "/"', () => {
+      pointer.unescape('~1foo~1bar').should.equal('/foo/bar')
+    })
+
+    it('should transform each occurence of "~0" to "~"', () => {
+      pointer.unescape('~1foo~1~0bar').should.equal('/foo/~bar')
+    })
+
+    it('should not transform "~01" to "/"', () => {
+      pointer.unescape('~1~01~1').should.equal('/~1/')
+    })
   })
 
   /**
@@ -250,18 +283,57 @@ describe.only('Pointer', () => {
 
   describe('parseJSONString', () => {
     describe('with a valid string argument', () => {
-      it('should recognize a whole document reference')
-      it('should recognize an object property')
-      it('should recognize an array element')
-      it('should recognize a root reference')
+      let pointer
+
+      beforeEach(() => {
+        pointer = new Pointer('')
+      })
+
+      it('should recognize a whole document reference', () => {
+        pointer.parseJSONString('').should.eql([])
+      })
+
+      it('should recognize an object property', () => {
+        pointer.parseJSONString('/foo/bar').should.eql(['foo', 'bar'])
+      })
+
+      it('should recognize an array element', () => {
+        pointer.parseJSONString('/foo/0').should.eql(['foo', '0'])
+      })
+
+      it('should recognize a root reference', () => {
+        pointer.parseJSONString('/').should.eql([''])
+      })
+
       it('should recognize an escaped "/" character')
-      it('should recognize "%"')
-      it('should recognize "^"')
-      it('should recognize "|"')
-      it('should recognize an escaped quotation mark character')
-      it('should recognize an escaped reverse solidus character')
+
+      it('should recognize "%"', () => {
+        pointer.parseJSONString('/c%d').should.eql(['c%d'])
+      })
+
+      it('should recognize "^"', () => {
+        pointer.parseJSONString('/e^f').should.eql(['e^f'])
+      })
+
+      it('should recognize "|"', () => {
+        pointer.parseJSONString('/g|h').should.eql(['g|h'])
+      })
+
+      it('should recognize an escaped quotation mark character', () => {
+        pointer.parseJSONString('/k\"l').should.eql(['k\"l'])
+      })
+
+      it('should recognize an escaped reverse solidus character', () => {
+        pointer.parseJSONString('/i\\j').should.eql(['i\\j'])
+      })
+
       it('should recognize an escaped control character')
-      it('should recognize a space character')
+
+      it('should recognize a space character', () => {
+        pointer.parseJSONString('/ ').should.eql([' '])
+
+      })
+
       it('should recognize an escaped "~" character')
       it('should recognize the "-" element of an array')
     })
@@ -412,13 +484,39 @@ describe.only('Pointer', () => {
    *    EMail: mnot@mnot.net
    */
 
+  /**
+   * Library specific methods
+   */
   describe('parse (static)', () => {
     it('should return a pointer instance')
   })
 
   describe('get', () => {
     describe('with valid reference', () => {
-      it('should return the referenced value from a source object')
+      let pointer, source
+
+      beforeEach(() => {
+        source = {
+          a: {
+            b: {
+              c: 'value'
+            },
+            d: [
+              { e: 'e' }
+            ]
+          }
+        }
+      })
+
+      it('should return the referenced value from a source object property', () => {
+        pointer = new Pointer('/a/b/c')
+        pointer.get(source).should.equal('value')
+      })
+
+      it('should return the referenced value from a source array property', () => {
+        pointer = new Pointer('/a/d/0/e')
+        pointer.get(source).should.equal('e')
+      })
     })
 
     describe('with non-matched reference', () => {
@@ -427,7 +525,23 @@ describe.only('Pointer', () => {
   })
 
   describe('set', () => {
-    it('should set the provide value on a target object')
+    let pointer, target
+
+    beforeEach(() => {
+      target = {}
+    })
+
+    it('should set the provide value on a target object', () => {
+      pointer = new Pointer('/a/b/c')
+      pointer.set(target, 'value')
+      target.a.b.c.should.equal('value')
+    })
+
+    it('should set the provide value on a target array', () => {
+      pointer = new Pointer('/a/d/3/e')
+      pointer.set(target, 'value')
+      target.a.d[3].e.should.equal('value')
+    })
   })
 
   describe('del', () => {

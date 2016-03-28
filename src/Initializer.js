@@ -1,14 +1,6 @@
 'use strict'
 
 /**
-<<<<<<< HEAD
- * Module dependencies
- */
-const path = require('path')
-
-/**
-=======
->>>>>>> compilers
  * Initializer
  */
 class Initializer {

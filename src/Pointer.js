@@ -11,6 +11,10 @@ class Pointer {
 
   /**
    * Constructor
+   *
+   * TODO:
+   *  - option to suppress throwing errors rather than handle with
+   *    try/catch blocks
    */
   constructor (expr) {
     this.expr = expr
@@ -32,6 +36,13 @@ class Pointer {
   }
 
   /**
+   * Parse
+   */
+  static parse (expr) {
+    return new Pointer(expr)
+  }
+
+  /**
    * Parse JSON String
    *
    * @description Parse an expression into a list of tokens
@@ -39,17 +50,33 @@ class Pointer {
    * @returns {Array}
    */
   parseJSONString (expr) {
-    let tokens
-
-    if (expr === '') {
-      tokens = []
-    } else if (expr === '/') {
-      tokens = ['']
-    } else {
-      tokens = expr.substr(1).split('/')
+    if (typeof expr !== 'string') {
+      throw new Error('Invalid JSON Pointer')
     }
 
-    return tokens
+    if (expr === '') {
+      return []
+    }
+
+    if (expr.charAt(0) !== '/') {
+      throw new Error('Invalid JSON Pointer')
+    }
+
+    if (expr === '/') {
+      return ['']
+    }
+
+    return expr.substr(1).split('/').map(this.unescape)
+  }
+
+  /**
+   * To JSON String
+   *
+   * @description Render a JSON string representation of a pointer
+   * @returns {string}
+   */
+  toJSONString () {
+    return `/${this.tokens.map(this.escape).join('/')}`
   }
 
     /**
@@ -65,7 +92,7 @@ class Pointer {
 
     for (let i = 0; i < tokens.length; i++) {
       if (!current || !current[tokens[i]]) {
-        return undefined
+        throw new Error('Invalid WTF')
       }
 
       current = current[tokens[i]]
@@ -75,13 +102,41 @@ class Pointer {
   }
 
   /**
-   * Set
+   * Add
    *
-   * @description Set a value on a target object referenced by the pointer
+   * @description Set a value on a target object referenced by the pointer. Put will insert an array element. To change an existing array elemnent, use `pointer.set()`
+   */
+  add (target, value) {
+    let tokens = this.tokens
+    let current = target
+
+    for (let i = 0; i < tokens.length; i++) {
+      let token = tokens[i]
+
+      if (i === tokens.length - 1) {
+        if (token === '-') {
+
+        } else if (Array.isArray(current)) {
+          current.splice(token, 0, value)
+        } else {
+          current[token] = value
+        }
+      } else if (!current[token]) {
+        current = current[token] = (parseInt(token)) ? [] : {}
+      } else {
+        current = current[token]
+      }
+    }
+  }
+
+  /**
+   * Replace
+   *
+   * @description Set a value on a target object referenced by the pointer. Set will overwrite an existing array element at the target location.
    * @param {Object} target
    * @param {*} value
    */
-  set (target, value) {
+  replace (target, value) {
     let tokens = this.tokens
     let current = target
 
@@ -97,7 +152,36 @@ class Pointer {
       }
     }
   }
+
+  /**
+   * Del
+   *
+   * - if this is an array it should splice the value out
+   */
+  remove (target) {
+    let tokens = this.tokens
+    let current = target
+
+    for (let i = 0; i < tokens.length; i++) {
+      let token = tokens[i]
+
+      if (current === undefined || current[token] === undefined) {
+        return undefined
+      } else if (Array.isArray(current)) {
+        current.splice(token, 1)
+        return undefined
+      } else if (i === tokens.length - 1) {
+        delete current[token]
+      }
+
+      current = current[token]
+    }
+
+    // delete from the target
+  }
+
 }
+
 
 /**
  * Exports

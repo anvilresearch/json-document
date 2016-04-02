@@ -125,15 +125,29 @@ describe('Patch', () => {
    * next operation.  Evaluation continues until all operations are
    * successfully applied or until an error condition is encountered.
    */
-  describe('class', () => {
-    it('should extend array')
-  })
-
   describe('constructor', () => {
+
+    let patch, source
+
+    beforeEach(() => {
+      source = [
+        { "op": "test", "path": "/a/b/c", "value": "foo" },
+        { "op": "remove", "path": "/a/b/c" },
+        { "op": "add", "path": "/a/b/c", "value": [ "foo", "bar" ] },
+        { "op": "replace", "path": "/a/b/c", "value": 42 },
+        { "op": "move", "from": "/a/b/c", "path": "/a/b/d" },
+        { "op": "copy", "from": "/a/b/d", "path": "/a/b/e" }
+      ]
+    })
+
     it('should verify the presence of "op"')
     it('should validate the value of "op"')
     it('should verify the presence of "path"')
-    it('should assign operations from an iterable')
+
+    it('should set operations', () => {
+      patch = new Patch(source)
+      patch.ops.should.equal(source)
+    })
   })
 
   /**
@@ -228,25 +242,69 @@ describe('Patch', () => {
    * because "a" does not exist.
    */
   describe('add', () => {
+
     describe('with all operations', () => {
       it('should verify the presence of "value"')
     })
 
     describe('with an array index target', () => {
-      it('should insert the value at the specified index')
+      let target, op, patch
+
+      before(() => {
+        target = { a: ['x', 'z'] }
+        op = { path: '/a/1', value: 'y' }
+        patch = new Patch()
+      })
+
+      it('should insert the value at the specified index', () => {
+        patch.add(op, target)
+        target.a.should.eql(['x', 'y', 'z'])
+      })
     })
 
     describe('with a non-existing target object member', () => {
-      it('should add the value to the target object')
+      let target, op, patch
+
+      before(() => {
+        target = { a: {} }
+        op = { path: '/a/b', value: 'c' }
+        patch = new Patch()
+      })
+
+      it('should add the value to the target object', () => {
+        patch.add(op, target)
+        target.a.b.should.equal('c')
+      })
     })
 
-    // UNSURE ABOUT THIS BEHAVIOR
     describe('with an existing target object member', () => {
-      it('should replace the value on the target object')
+      let target, op, patch
+
+      before(() => {
+        target = { a: { b: 'c' } }
+        op = { path: '/a/b', value: 'x' }
+        patch = new Patch()
+      })
+
+      it('should replace the value on the target object', () => {
+        patch.add(op, target)
+        target.a.b.should.equal('x')
+      })
     })
 
     describe('with a non-existing target location', () => {
-      it('should write new specifications because RFC 6902 appears self-contradictory')
+      let target, op, patch
+
+      before(() => {
+        target = {}
+        op = { path: '/a/b', value: 'c' }
+        patch = new Patch()
+      })
+
+      it('should add the value to the target object', () => {
+        patch.add(op, target)
+        target.a.b.should.equal('c')
+      })
     })
   })
 
@@ -266,11 +324,33 @@ describe('Patch', () => {
    */
   describe('remove', () => {
     describe('with an existing object member target location', () => {
-      it('should delete the value from the container object')
+      let target, op, patch
+
+      before(() => {
+        target = { a: { b: { c: 'c' } } }
+        op = { path: '/a/b/c' }
+        patch = new Patch()
+      })
+
+      it('should delete the value from the container object', () => {
+        patch.remove(op, target)
+        expect(target.a.b.c).to.be.undefined
+      })
     })
 
     describe('with an existing array element', () => {
-      it('should splice the element from the array')
+      let target, op, patch
+
+      before(() => {
+        target = { a: { b: [ { c: 'c' }, { d: 'd' } ] } }
+        op = { path: '/a/b/0' }
+        patch = new Patch()
+      })
+
+      it('should splice the element from the array', () => {
+        patch.remove(op, target)
+        target.a.b.should.eql([ { d: 'd' } ])
+      })
     })
 
     describe('with a non-existing object member', () => {
@@ -301,7 +381,18 @@ describe('Patch', () => {
     })
 
     describe('with an array index target', () => {
-      it('should replace the value at the specified index')
+      let target, op, patch
+
+      before(() => {
+        target = { a: { b: [{}, {}, {}] } }
+        op = { path: '/a/b/1', value: { c: 42 } }
+        patch = new Patch()
+      })
+
+      it('should replace the value at the specified index', () => {
+        patch.replace(op, target)
+        target.a.b[1].c.should.equal(42)
+      })
     })
 
     describe('with a non-existing target object member', () => {
@@ -309,7 +400,18 @@ describe('Patch', () => {
     })
 
     describe('with an existing target object member', () => {
-      it('should replace the value on the target object')
+      let target, op, patch
+
+      before(() => {
+        target = { a: { b: {} } }
+        op = { path: '/a/b/c', value: 42 }
+        patch = new Patch()
+      })
+
+      it('should replace the value on the target object', () => {
+        patch.replace(op, target)
+        target.a.b.c.should.equal(42)
+      })
     })
 
     describe('with a non-existing target location', () => {
@@ -434,7 +536,16 @@ describe('Patch', () => {
    * ]
    */
 
-  describe('apply', () => {})
+  describe('apply', () => {
+    let patch, source
+
+    before(() => {
+    })
+
+    it('should invoke each operation', () => {
+
+    })
+  })
 
   describe('apply (static)', () => {})
 
@@ -545,7 +656,9 @@ describe('Patch', () => {
    *            RFC 5789, March 2010.
    *
    * Appendix A.  Examples
-   *
+   */
+
+  /**
    * A.1. v Adding an Object Member
    *
    * An example target JSON document:
@@ -564,7 +677,35 @@ describe('Patch', () => {
    *   "baz": "qux",
    *   "foo": "bar"
    * }
-   *
+   */
+
+  describe('adding an object member', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: 'bar'
+      }
+
+      patch = new Patch([
+        {
+          op: 'add',
+          path: '/baz',
+          value: 'qux'
+        }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: 'bar',
+        baz: 'qux'
+      })
+    })
+  })
+
+  /**
    * A.2.  Adding an Array Element
    *
    * An example target JSON document:
@@ -580,7 +721,39 @@ describe('Patch', () => {
    * The resulting JSON document:
    *
    * { "foo": [ "bar", "qux", "baz" ] }
-   *
+   */
+
+  describe('adding an array element', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: [ 'bar', 'baz' ]
+      }
+
+      patch = new Patch([
+        {
+          op: 'add',
+          path: '/foo/1',
+          value: 'qux'
+        }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: [
+          'bar',
+          'qux',
+          'baz'
+        ]
+      })
+    })
+  })
+
+
+  /**
    * A.3.  Removing an Object Member
    *
    * An example target JSON document:
@@ -599,7 +772,34 @@ describe('Patch', () => {
    * The resulting JSON document:
    *
    * { "foo": "bar" }
-   *
+   */
+
+  describe('removing an object member', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        baz: 'qux',
+        foo: 'bar'
+      }
+
+      patch = new Patch([
+        {
+          op: 'remove',
+          path: '/baz'
+        }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: 'bar'
+      })
+    })
+  })
+
+  /**
    * A.4.  Removing an Array Element
    *
    * An example target JSON document:
@@ -615,7 +815,40 @@ describe('Patch', () => {
    * The resulting JSON document:
    *
    * { "foo": [ "bar", "baz" ] }
-   *
+   */
+
+  describe('removing an array element', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: [
+          'bar',
+          'qux',
+          'baz'
+        ]
+      }
+
+      patch = new Patch([
+        {
+          op: 'remove',
+          path: '/foo/1'
+        }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: [
+          'bar',
+          'baz'
+        ]
+      })
+    })
+  })
+
+  /**
    * A.5.  Replacing a Value
    *
    * An example target JSON document:
@@ -637,7 +870,36 @@ describe('Patch', () => {
    *   "baz": "boo",
    *   "foo": "bar"
    * }
-   *
+   */
+
+  describe('replacing a value', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        baz: 'qux',
+        foo: 'bar'
+      }
+
+      patch = new Patch([
+        {
+          op: 'replace',
+          path: '/baz',
+          value: 'boo'
+        }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        baz: 'boo',
+        foo: 'bar'
+      })
+    })
+  })
+
+  /**
    * A.6.  Moving a Value
    *
    * An example target JSON document:
@@ -669,7 +931,46 @@ describe('Patch', () => {
    *     "thud": "fred"
    *   }
    * }
-   *
+   */
+
+  describe('moving a value', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: {
+          bar: 'baz',
+          waldo: 'fred'
+        },
+        qux: {
+          corge: 'grault'
+        }
+      }
+
+      patch = new Patch([
+        {
+          op: 'move',
+          from: '/foo/waldo',
+          path: '/qux/thud'
+        }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: {
+          bar: "baz"
+        },
+        qux: {
+          corge: "grault",
+          thud: "fred"
+        }
+      })
+    })
+  })
+
+  /**
    * A.7.  Moving an Array Element
    *
    * An example target JSON document:
@@ -685,7 +986,34 @@ describe('Patch', () => {
    * The resulting JSON document:
    *
    * { "foo": [ "all", "cows", "eat", "grass" ] }
-   *
+   */
+
+  describe('moving an array element', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: ['all', 'grass', 'cows', 'eat']
+      }
+
+      patch = new Patch([
+        {
+          op: 'move',
+          from: '/foo/1',
+          path: '/foo/3'
+        }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: ['all', 'cows', 'eat', 'grass']
+      })
+    })
+  })
+
+  /**
    * A.8.  Testing a Value: Success
    *
    * An example target JSON document:
@@ -701,7 +1029,9 @@ describe('Patch', () => {
    *   { "op": "test", "path": "/baz", "value": "qux" },
    *   { "op": "test", "path": "/foo/1", "value": 2 }
    * ]
-   *
+   */
+
+  /**
    * A.9.  Testing a Value: Error
    *
    * An example target JSON document:
@@ -713,7 +1043,9 @@ describe('Patch', () => {
    * [
    *   { "op": "test", "path": "/baz", "value": "bar" }
    * ]
-   *
+   */
+
+  /**
    * A.10.  Adding a Nested Member Object
    *
    * An example target JSON document:
@@ -735,7 +1067,9 @@ describe('Patch', () => {
    *     }
    *   }
    * }
-   *
+   */
+
+  /**
    * A.11.  Ignoring Unrecognized Elements
    *
    * An example target JSON document:
@@ -755,6 +1089,9 @@ describe('Patch', () => {
    *   "baz": "qux"
    * }
    *
+   */
+
+  /**
    * A.12.  Adding to a Nonexistent Target
    *
    * An example target JSON document:
@@ -772,7 +1109,9 @@ describe('Patch', () => {
    * because the "add" operation's target location that references neither
    * the root of the document, nor a member of an existing object, nor a
    * member of an existing array.
-   *
+   */
+
+  /**
    * A.13.  Invalid JSON Patch Document
    *
    * A JSON Patch document:
@@ -785,7 +1124,9 @@ describe('Patch', () => {
    * because it contains a later "op":"remove" element.  JSON requires
    * that object member names be unique with a "SHOULD" requirement, and
    * there is no standard error handling for duplicates.
-   *
+   */
+
+  /**
    * A.14.  ~ Escape Ordering
    *
    * An example target JSON document:
@@ -808,6 +1149,9 @@ describe('Patch', () => {
    *   "~1": 10
    * }
    *
+   */
+
+  /**
    * A.15.  Comparing Strings and Numbers
    *
    * An example target JSON document:
@@ -825,7 +1169,9 @@ describe('Patch', () => {
    *
    * This results in an error, because the test fails.  The document value
    * is numeric, whereas the value being tested for is a string.
-   *
+   */
+
+  /**
    * A.16.  Adding an Array Value
    *
    * An example target JSON document:
@@ -842,6 +1188,9 @@ describe('Patch', () => {
    *
    * { "foo": ["bar", ["abc", "def"]] }
    *
+   */
+
+  /**
    * Authors' Addresses
    *
    * Paul C. Bryan (editor)

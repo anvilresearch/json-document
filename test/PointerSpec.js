@@ -83,7 +83,7 @@ const Pointer = require(path.join(cwd, 'src', 'Pointer'))
  *      10.2.  Informative References . . . . . . . . . . . . . . . . . . 7
  */
 
-describe.only('Pointer', () => {
+describe('Pointer', () => {
 
   describe('constructor', () => {
     it('should set the expression', () => {
@@ -305,7 +305,9 @@ describe.only('Pointer', () => {
         pointer.parseJSONString('/').should.eql([''])
       })
 
-      it('should recognize an escaped "/" character')
+      it('should recognize an escaped "/" character', () => {
+        pointer.parseJSONString('/a~1b').should.eql(['a/b'])
+      })
 
       it('should recognize "%"', () => {
         pointer.parseJSONString('/c%d').should.eql(['c%d'])
@@ -331,19 +333,34 @@ describe.only('Pointer', () => {
 
       it('should recognize a space character', () => {
         pointer.parseJSONString('/ ').should.eql([' '])
-
       })
 
-      it('should recognize an escaped "~" character')
-      it('should recognize the "-" element of an array')
+      it('should recognize an escaped "~" character', () => {
+        pointer.parseJSONString('/m~0n').should.eql(['m~n'])
+      })
+
+      it('should recognize the "-" element of an array', () => {
+        pointer.parseJSONString('/foo/-').should.eql(['foo', '-'])
+      })
     })
 
     describe('with an invalid string argument', () => {
-      it('should create an error condition')
+      it('should create an error condition', () => {
+        expect(() => Pointer.prototype.parseJSONString('&')).to.throw()
+      })
     })
 
     describe('with a non-string argument', () => {
-      it('should create an error condition')
+      it('should create an error condition', () => {
+        expect(() => Pointer.prototype.parseJSONString()).to.throw()
+      })
+    })
+  })
+
+  describe('toJSONString', () => {
+    it('should render a JSON string representation', () => {
+      let pointer = new Pointer('/a/b~0c/d~1f')
+      pointer.toJSONString().should.equal('/a/b~0c/d~1f')
     })
   })
 
@@ -488,7 +505,9 @@ describe.only('Pointer', () => {
    * Library specific methods
    */
   describe('parse (static)', () => {
-    it('should return a pointer instance')
+    it('should return a pointer instance', () => {
+      Pointer.parse('/').should.be.instanceof(Pointer)
+    })
   })
 
   describe('get', () => {
@@ -524,32 +543,65 @@ describe.only('Pointer', () => {
     })
   })
 
-  describe('set', () => {
+  describe('add', () => {
+    let pointer, target
+
+    beforeEach(() => {
+      target = { foo: ['bar', 'baz'] }
+    })
+
+    it('should set the referenced value on a target object', () => {
+      pointer = new Pointer('/a/b/c')
+      pointer.add(target, 'value')
+      target.a.b.c.should.equal('value')
+    })
+
+    it('should insert the referenced value into a target array', () => {
+      pointer = new Pointer('/foo/1')
+      pointer.add(target, 'qux')
+      target.foo.should.eql(['bar', 'qux', 'baz'])
+    })
+
+  })
+
+  describe('replace', () => {
     let pointer, target
 
     beforeEach(() => {
       target = {}
     })
 
-    it('should set the provide value on a target object', () => {
+    it('should replace the referenced value on a target object', () => {
       pointer = new Pointer('/a/b/c')
-      pointer.set(target, 'value')
+      pointer.replace(target, 'value')
       target.a.b.c.should.equal('value')
     })
 
-    it('should set the provide value on a target array', () => {
+    it('should replace the referenced value on a target array', () => {
       pointer = new Pointer('/a/d/3/e')
-      pointer.set(target, 'value')
+      pointer.replace(target, 'value')
       target.a.d[3].e.should.equal('value')
     })
   })
 
-  describe('del', () => {
-    it('should remove the referenced value from a target object')
-  })
+  describe('remove', () => {
+    let pointer, target
 
-  describe('toString', () => {
-    it('should render a JSON string representation')
+    beforeEach(() => {
+      target = { a: { b: [ 0, 1, 2 ] }}
+    })
+
+    it('should remove the referenced value from a target object', () => {
+      pointer = new Pointer('/a/b')
+      pointer.remove(target)
+      expect(target.a.b).to.be.undefined
+    })
+
+    it('should remove the referenced value from a target array', () => {
+      pointer = new Pointer('/a/b/1')
+      pointer.remove(target)
+      target.a.b.should.eql([0, 2])
+    })
   })
 
 })

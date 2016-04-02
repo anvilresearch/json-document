@@ -189,7 +189,7 @@ describe('Initializer', () => {
     it('should group operations by container')
 
 
-    it('should do stuff', () => {
+    it.skip('should do stuff', () => {
       let schema = {
         properties: {
           a: { type: 'string' },

@@ -140,10 +140,6 @@ describe('Patch', () => {
       ]
     })
 
-    it('should verify the presence of "op"')
-    it('should validate the value of "op"')
-    it('should verify the presence of "path"')
-
     it('should set operations', () => {
       patch = new Patch(source)
       patch.ops.should.equal(source)
@@ -180,6 +176,37 @@ describe('Patch', () => {
    * document, i.e., after any unescaping (see [RFC4627], Section 2.5)
    * takes place.
    */
+  describe('apply', () => {
+    let patch
+
+    it('should verify the presence of "op"', () => {
+      patch = new Patch([{}])
+      expect(() => {
+        patch.apply({})
+      }).to.throw('Missing operation in JSON Patch')
+    })
+
+    it('should validate the value of "op"', () => {
+      patch = new Patch([{ op: 'unknown' }])
+      expect(() => {
+        patch.apply({})
+      }).to.throw('Invalid JSON Patch operation')
+    })
+
+    it('should verify the presence of "path"', () => {
+      patch = new Patch([{ op: 'add' }])
+      expect(() => {
+        patch.apply({})
+      }).to.throw('Missing path in JSON Patch operation')
+    })
+
+    it('should invoke each operation', () => {
+
+    })
+  })
+
+  describe('apply (static)', () => {})
+
 
   /**
    * 4.1.  add
@@ -244,7 +271,12 @@ describe('Patch', () => {
   describe('add', () => {
 
     describe('with all operations', () => {
-      it('should verify the presence of "value"')
+      it('should verify the presence of "value"', () => {
+        let patch = new Patch()
+        expect(() => {
+          patch.add({ op: 'add', path: '/a/b/c' }, {})
+        }).to.throw('Missing value in JSON Patch add operation')
+      })
     })
 
     describe('with an array index target', () => {
@@ -377,7 +409,12 @@ describe('Patch', () => {
    */
   describe('replace', () => {
     describe('with all operations', () => {
-      it('should verify the presence of "value"')
+      it('should verify the presence of "value"', () => {
+        let patch = new Patch()
+        expect(() => {
+          patch.replace({ op: 'replace', path: '/a/b/c' }, {})
+        }).to.throw('Missing value in JSON Patch replace operation')
+      })
     })
 
     describe('with an array index target', () => {
@@ -535,19 +572,6 @@ describe('Patch', () => {
    *   { "op": "test", "path": "/a/b/c", "value": "C" }
    * ]
    */
-
-  describe('apply', () => {
-    let patch, source
-
-    before(() => {
-    })
-
-    it('should invoke each operation', () => {
-
-    })
-  })
-
-  describe('apply (static)', () => {})
 
   /**
    * 6.  IANA Considerations

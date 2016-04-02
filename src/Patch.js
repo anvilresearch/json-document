@@ -6,6 +6,18 @@
 const Pointer = require('./Pointer')
 
 /**
+ * Enumerations
+ */
+const validOperations = [
+  'add',
+  'remove',
+  'replace',
+  'move',
+  'copy',
+  'test'
+]
+
+/**
  * Patch
  *
  * @class
@@ -34,7 +46,21 @@ class Patch {
    */
   apply (target) {
     this.ops.forEach(operation => {
-      this[operation.op](operation, target)
+      let op = operation.op
+
+      if (!op) {
+        throw new Error('Missing operation in JSON Patch')
+      }
+
+      if (validOperations.indexOf(op) === -1) {
+        throw new Error('Invalid JSON Patch operation')
+      }
+
+      if (!operation.path) {
+        throw new Error('Missing path in JSON Patch operation')
+      }
+
+      this[op](operation, target)
     })
   }
 
@@ -45,6 +71,10 @@ class Patch {
    * @param {Object} target
    */
   add (op, target) {
+    if (op.value === undefined) {
+      throw new Error('Missing value in JSON Patch add operation')
+    }
+
     let pointer = new Pointer(op.path)
     pointer.add(target, op.value)
   }
@@ -67,6 +97,10 @@ class Patch {
    * @param {Object} target
    */
   replace (op, target) {
+    if (op.value === undefined) {
+      throw new Error('Missing value in JSON Patch replace operation')
+    }
+
     let pointer = new Pointer(op.path)
     pointer.replace(target, op.value)
   }

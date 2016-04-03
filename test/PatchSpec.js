@@ -207,7 +207,6 @@ describe('Patch', () => {
 
   describe('apply (static)', () => {})
 
-
   /**
    * 4.1.  add
    *
@@ -548,7 +547,160 @@ describe('Patch', () => {
    *
    * { "op": "test", "path": "/a/b/c", "value": "foo" }
    */
-  describe('test', () => {})
+  describe('test', () => {
+    describe('with missing operation value', () => {
+      it('should create an error condition', () => {
+        expect(() => {
+          let patch = new Patch()
+          patch.test({ op: 'test', path: '/foo' }, {})
+        }).to.throw('Missing value in JSON Patch test operation')
+      })
+    })
+
+    describe('with equal string value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: 'bar' }
+        op = { op: 'test', path: '/foo', value: 'bar' }
+        patch = new Patch()
+      })
+
+      it('should not create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.not.throw()
+      })
+    })
+
+    describe('with non-equal string value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: 'bar' }
+        op = { op: 'test', path: '/foo', value: 'baz' }
+        patch = new Patch()
+      })
+
+      it('should create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.throw('Mismatching JSON Patch test value')
+      })
+    })
+
+    describe('with equal number value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: 42 }
+        op = { op: 'test', path: '/foo', value: 42 }
+        patch = new Patch()
+      })
+
+      it('should not create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.not.throw()
+      })
+    })
+
+    describe('with non-equal number value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: 42 }
+        op = { op: 'test', path: '/foo', value: 43 }
+        patch = new Patch()
+      })
+
+      it('should create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.throw('Mismatching JSON Patch test value')
+      })
+    })
+
+    describe('with equal array value', () => {
+      it('should not create an error condition')
+    })
+
+    describe('with non-equal array value', () => {
+      it('should create an error condition')
+    })
+
+    describe('with equal object value', () => {
+      it('should not create an error condition')
+    })
+
+    describe('with non-equal object value', () => {
+      it('should create an error condition')
+    })
+
+    describe('with equal boolean value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: true }
+        op = { op: 'test', path: '/foo', value: true }
+        patch = new Patch()
+      })
+
+      it('should not create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.not.throw()
+      })
+    })
+
+    describe('with non-equal boolean value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: true }
+        op = { op: 'test', path: '/foo', value: false }
+        patch = new Patch()
+      })
+
+      it('should create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.throw('Mismatching JSON Patch test value')
+      })
+    })
+
+    describe('with equal null value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: null }
+        op = { op: 'test', path: '/foo', value: null }
+        patch = new Patch()
+      })
+
+      it('should not create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.not.throw()
+      })
+    })
+
+    describe('with non-equal null value', () => {
+      let target, op, patch
+
+      before(() => {
+        target = { foo: null }
+        op = { op: 'test', path: '/foo', value: false }
+        patch = new Patch()
+      })
+
+      it('should create an error condition', () => {
+        expect(() => {
+          patch.test(op, target)
+        }).to.throw('Mismatching JSON Patch test value')
+      })
+    })
+  })
 
   /**
    * 5.  Error Handling
@@ -702,7 +854,6 @@ describe('Patch', () => {
    *   "foo": "bar"
    * }
    */
-
   describe('adding an object member', () => {
     let target, patch
 
@@ -746,7 +897,6 @@ describe('Patch', () => {
    *
    * { "foo": [ "bar", "qux", "baz" ] }
    */
-
   describe('adding an array element', () => {
     let target, patch
 
@@ -776,7 +926,6 @@ describe('Patch', () => {
     })
   })
 
-
   /**
    * A.3.  Removing an Object Member
    *
@@ -797,7 +946,6 @@ describe('Patch', () => {
    *
    * { "foo": "bar" }
    */
-
   describe('removing an object member', () => {
     let target, patch
 
@@ -840,7 +988,6 @@ describe('Patch', () => {
    *
    * { "foo": [ "bar", "baz" ] }
    */
-
   describe('removing an array element', () => {
     let target, patch
 
@@ -895,7 +1042,6 @@ describe('Patch', () => {
    *   "foo": "bar"
    * }
    */
-
   describe('replacing a value', () => {
     let target, patch
 
@@ -956,7 +1102,6 @@ describe('Patch', () => {
    *   }
    * }
    */
-
   describe('moving a value', () => {
     let target, patch
 
@@ -1011,7 +1156,6 @@ describe('Patch', () => {
    *
    * { "foo": [ "all", "cows", "eat", "grass" ] }
    */
-
   describe('moving an array element', () => {
     let target, patch
 
@@ -1054,6 +1198,27 @@ describe('Patch', () => {
    *   { "op": "test", "path": "/foo/1", "value": 2 }
    * ]
    */
+  describe('testing a value (success)', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        baz: 'qux',
+        foo: ['a', 2, 'c']
+      }
+
+      patch = new Patch([
+        { op: 'test', path: '/baz', value: 'qux' },
+        { op: 'test', path: '/foo/1', value: 2 }
+      ])
+    })
+
+    it('should not create an error condition', () => {
+      expect(() => {
+        patch.apply(target)
+      }).to.not.throw()
+    })
+  })
 
   /**
    * A.9.  Testing a Value: Error
@@ -1068,6 +1233,25 @@ describe('Patch', () => {
    *   { "op": "test", "path": "/baz", "value": "bar" }
    * ]
    */
+  describe('testing a value (error)', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        baz: 'qux'
+      }
+
+      patch = new Patch([
+        { op: 'test', path: '/baz', value: 'bar' }
+      ])
+    })
+
+    it('should not create an error condition', () => {
+      expect(() => {
+        patch.apply(target)
+      }).to.throw('Mismatching JSON Patch test value')
+    })
+  })
 
   /**
    * A.10.  Adding a Nested Member Object

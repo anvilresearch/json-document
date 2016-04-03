@@ -91,8 +91,8 @@ class Pointer {
     let tokens = this.tokens
 
     for (let i = 0; i < tokens.length; i++) {
-      if (!current || !current[tokens[i]]) {
-        throw new Error('Invalid WTF')
+      if (!current || current[tokens[i]] === undefined) {
+        throw new Error('Invalid JSON Pointer reference')
       }
 
       current = current[tokens[i]]

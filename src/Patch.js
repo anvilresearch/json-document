@@ -119,6 +119,35 @@ class Patch {
     from.remove(target)
     pointer.add(target, value)
   }
+
+  /**
+   * Test
+   *
+   * @param {Object} op
+   * @param {Object} target
+   */
+  test (op, target) {
+    if (op.value === undefined) {
+      throw new Error('Missing value in JSON Patch test operation')
+    }
+
+    let pointer = new Pointer(op.path)
+    let value = pointer.get(target)
+
+    switch (typeof op.value) {
+      //case 'string':
+      //case 'number':
+      //case 'boolean':
+      //  if (value !== op.value) {
+      //    throw new Error('Mismatching JSON Patch test value')
+      //  }
+      default:
+        if (value !== op.value) {
+          throw new Error('Mismatching JSON Patch test value')
+        }
+    }
+
+  }
 }
 
 /**

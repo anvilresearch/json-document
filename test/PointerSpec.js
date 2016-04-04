@@ -562,6 +562,12 @@ describe('Pointer', () => {
       target.foo.should.eql(['bar', 'qux', 'baz'])
     })
 
+    it('should add the referenced value to the end of an array', () => {
+      pointer = new Pointer('/foo/-')
+      pointer.add(target, 'qux')
+      target.foo.should.eql(['bar', 'baz', 'qux'])
+    })
+
   })
 
   describe('replace', () => {

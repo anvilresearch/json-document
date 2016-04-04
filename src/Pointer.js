@@ -115,7 +115,7 @@ class Pointer {
 
       if (i === tokens.length - 1) {
         if (token === '-') {
-
+          current.push(value)
         } else if (Array.isArray(current)) {
           current.splice(token, 0, value)
         } else {

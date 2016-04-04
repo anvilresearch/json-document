@@ -183,21 +183,21 @@ describe('Patch', () => {
       patch = new Patch([{}])
       expect(() => {
         patch.apply({})
-      }).to.throw('Missing operation in JSON Patch')
+      }).to.throw('Missing "op" in JSON Patch operation')
     })
 
     it('should validate the value of "op"', () => {
       patch = new Patch([{ op: 'unknown' }])
       expect(() => {
         patch.apply({})
-      }).to.throw('Invalid JSON Patch operation')
+      }).to.throw('Invalid "op" in JSON Patch operation')
     })
 
     it('should verify the presence of "path"', () => {
       patch = new Patch([{ op: 'add' }])
       expect(() => {
         patch.apply({})
-      }).to.throw('Missing path in JSON Patch operation')
+      }).to.throw('Missing "path" in JSON Patch operation')
     })
 
     it('should invoke each operation', () => {
@@ -274,7 +274,7 @@ describe('Patch', () => {
         let patch = new Patch()
         expect(() => {
           patch.add({ op: 'add', path: '/a/b/c' }, {})
-        }).to.throw('Missing value in JSON Patch add operation')
+        }).to.throw('Missing "value" in JSON Patch add operation')
       })
     })
 
@@ -412,7 +412,7 @@ describe('Patch', () => {
         let patch = new Patch()
         expect(() => {
           patch.replace({ op: 'replace', path: '/a/b/c' }, {})
-        }).to.throw('Missing value in JSON Patch replace operation')
+        }).to.throw('Missing "value" in JSON Patch replace operation')
       })
     })
 
@@ -478,7 +478,51 @@ describe('Patch', () => {
    * The "from" location MUST NOT be a proper prefix of the "path"
    * location; i.e., a location cannot be moved into one of its children.
    */
-  describe('move', () => {})
+  describe('move', () => {
+    describe('with all operations', () => {
+      it('should verify the presence of "from"', () => {
+        let patch = new Patch()
+        expect(() => {
+          patch.move({ op: 'move', path: '/a/b/c' }, {})
+        }).to.throw('Missing "from" in JSON Patch move operation')
+      })
+
+      it('should verify "from" is not a prefix of "path"', () => {
+        let patch = new Patch()
+        expect(() => {
+          patch.move({
+            op: 'move',
+            from: '/foo/bar',
+            path: '/foo/bar/baz'
+          }, {
+            foo: {
+              bar: 'baz'
+            }
+          })
+        }).to.throw('Invalid "from" in JSON Patch move operation')
+      })
+    })
+
+    describe('with a valid operation', () => {
+      let patch, op, target
+
+      beforeEach(() => {
+        target = { a: { b: { c: 42 } } }
+        op = { op: 'move', from: '/a/b/c', path: '/a/b/d' }
+        patch = new Patch()
+      })
+
+      it('should remove existing value from the target', () => {
+        patch.move(op, target)
+        expect(target.a.b.c).to.be.undefined
+      })
+
+      it('should add existing value at the specified location', () => {
+        patch.move(op, target)
+        target.a.b.d.should.equal(42)
+      })
+    })
+  })
 
   /**
    *
@@ -500,7 +544,47 @@ describe('Patch', () => {
    * This operation is functionally identical to an "add" operation at the
    * target location using the value specified in the "from" member.
    */
-  describe('copy', () => {})
+  describe('copy', () => {
+    describe('with all operations', () => {
+      it('should verify the presence of "from"', () => {
+        let patch = new Patch()
+        expect(() => {
+          patch.copy({ op: 'copy', path: '/a/b/c' }, {})
+        }).to.throw('Missing "from" in JSON Patch copy operation')
+      })
+
+      it('should verify "from" location exists', () => {
+        let patch = new Patch()
+        expect(() => {
+          patch.copy({
+            op: 'copy',
+            from: '/a/b/c',
+            path: '/a/b/e'
+          }, {})
+        }).to.throw('Invalid JSON Pointer reference')
+      })
+    })
+
+    describe('with a valid operation', () => {
+      let patch, op, target
+
+      beforeEach(() => {
+        target = { a: { b: { c: 42 } } }
+        op = { op: 'copy', from: '/a/b/c', path: '/a/b/e' }
+        patch = new Patch()
+      })
+
+      it('should not remove existing value from the target', () => {
+        patch.copy(op, target)
+        target.a.b.c.should.equal(42)
+      })
+
+      it('should add existing value at the specified location', () => {
+        patch.copy(op, target)
+        target.a.b.e.should.equal(42)
+      })
+    })
+  })
 
   /**
    * 4.6.  test
@@ -553,7 +637,7 @@ describe('Patch', () => {
         expect(() => {
           let patch = new Patch()
           patch.test({ op: 'test', path: '/foo' }, {})
-        }).to.throw('Missing value in JSON Patch test operation')
+        }).to.throw('Missing "value" in JSON Patch test operation')
       })
     })
 
@@ -724,6 +808,7 @@ describe('Patch', () => {
    *   { "op": "test", "path": "/a/b/c", "value": "C" }
    * ]
    */
+
 
   /**
    * 6.  IANA Considerations
@@ -1246,7 +1331,7 @@ describe('Patch', () => {
       ])
     })
 
-    it('should not create an error condition', () => {
+    it('should create an error condition', () => {
       expect(() => {
         patch.apply(target)
       }).to.throw('Mismatching JSON Patch test value')
@@ -1276,6 +1361,29 @@ describe('Patch', () => {
    *   }
    * }
    */
+  describe('adding a nested member object', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: 'bar'
+      }
+
+      patch = new Patch([
+        { op: 'add', path: '/child', value: { grandchild: {} } }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: 'bar',
+        child: {
+          grandchild: {}
+        }
+      })
+    })
+  })
 
   /**
    * A.11.  Ignoring Unrecognized Elements
@@ -1298,6 +1406,27 @@ describe('Patch', () => {
    * }
    *
    */
+  describe('ignoring unrecognized elements', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: 'bar'
+      }
+
+      patch = new Patch([
+        { op: 'add', path: '/baz', value: 'qux', xyz: 123 }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: 'bar',
+        baz: 'qux'
+      })
+    })
+  })
 
   /**
    * A.12.  Adding to a Nonexistent Target
@@ -1318,6 +1447,24 @@ describe('Patch', () => {
    * the root of the document, nor a member of an existing object, nor a
    * member of an existing array.
    */
+  describe('adding to a nonexistant target', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: 'bar'
+      }
+
+      patch = new Patch([
+        { op: 'add', path: '/baz/bat', value: 'qux' }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({ foo: 'bar' })
+    })
+  })
 
   /**
    * A.13.  Invalid JSON Patch Document
@@ -1358,6 +1505,28 @@ describe('Patch', () => {
    * }
    *
    */
+  describe('escape ordering', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        '/': 9,
+        '~1': 10
+      }
+
+      patch = new Patch([
+        { op: 'test', path: '/~01', value: 10 }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        '/': 9,
+        '~1': 10
+      })
+    })
+  })
 
   /**
    * A.15.  Comparing Strings and Numbers
@@ -1378,6 +1547,26 @@ describe('Patch', () => {
    * This results in an error, because the test fails.  The document value
    * is numeric, whereas the value being tested for is a string.
    */
+  describe('comparing strings and numbers', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        '/': 9,
+        '~1': 10
+      }
+
+      patch = new Patch([
+        { op: 'test', path: '/~01', value: "10" }
+      ])
+    })
+
+    it('should create an error condition', () => {
+      expect(() => {
+        patch.apply(target)
+      }).to.throw('Mismatching JSON Patch test value')
+    })
+  })
 
   /**
    * A.16.  Adding an Array Value
@@ -1397,6 +1586,26 @@ describe('Patch', () => {
    * { "foo": ["bar", ["abc", "def"]] }
    *
    */
+  describe('adding an array value', () => {
+    let target, patch
+
+    beforeEach(() => {
+      target = {
+        foo: ['bar']
+      }
+
+      patch = new Patch([
+        { op: 'add', path: '/foo/-', value: ['abc', 'def'] }
+      ])
+    })
+
+    it('should result in a correct target', () => {
+      patch.apply(target)
+      target.should.eql({
+        foo: ['bar', ['abc', 'def']]
+      })
+    })
+  })
 
   /**
    * Authors' Addresses

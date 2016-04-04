@@ -49,15 +49,15 @@ class Patch {
       let op = operation.op
 
       if (!op) {
-        throw new Error('Missing operation in JSON Patch')
+        throw new Error('Missing "op" in JSON Patch operation')
       }
 
       if (validOperations.indexOf(op) === -1) {
-        throw new Error('Invalid JSON Patch operation')
+        throw new Error('Invalid "op" in JSON Patch operation')
       }
 
       if (!operation.path) {
-        throw new Error('Missing path in JSON Patch operation')
+        throw new Error('Missing "path" in JSON Patch operation')
       }
 
       this[op](operation, target)
@@ -72,7 +72,7 @@ class Patch {
    */
   add (op, target) {
     if (op.value === undefined) {
-      throw new Error('Missing value in JSON Patch add operation')
+      throw new Error('Missing "value" in JSON Patch add operation')
     }
 
     let pointer = new Pointer(op.path)
@@ -98,7 +98,7 @@ class Patch {
    */
   replace (op, target) {
     if (op.value === undefined) {
-      throw new Error('Missing value in JSON Patch replace operation')
+      throw new Error('Missing "value" in JSON Patch replace operation')
     }
 
     let pointer = new Pointer(op.path)
@@ -112,11 +112,37 @@ class Patch {
    * @param {Object} target
    */
   move (op, target) {
+    if (op.from === undefined) {
+      throw new Error('Missing "from" in JSON Patch move operation')
+    }
+
+    if (op.path.match(new RegExp(`^${op.from}`))) {
+      throw new Error('Invalid "from" in JSON Patch move operation')
+    }
+
     let pointer = new Pointer(op.path)
     let from = new Pointer(op.from)
     let value = from.get(target)
 
     from.remove(target)
+    pointer.add(target, value)
+  }
+
+  /**
+   * Copy
+   *
+   * @param {Object} op
+   * @param {Object} target
+   */
+  copy (op, target) {
+    if (op.from === undefined) {
+      throw new Error('Missing "from" in JSON Patch copy operation')
+    }
+
+    let pointer = new Pointer(op.path)
+    let from = new Pointer(op.from)
+    let value = from.get(target)
+
     pointer.add(target, value)
   }
 
@@ -128,7 +154,7 @@ class Patch {
    */
   test (op, target) {
     if (op.value === undefined) {
-      throw new Error('Missing value in JSON Patch test operation')
+      throw new Error('Missing "value" in JSON Patch test operation')
     }
 
     let pointer = new Pointer(op.path)

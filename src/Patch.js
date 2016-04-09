@@ -6,9 +6,16 @@
 const Pointer = require('./Pointer')
 
 /**
- * Enumerations
+ * Modes
  */
-const validOperations = [
+const THROW = 0
+const RECOVER = 1
+const SILENT = 2
+
+/**
+ * Operations list
+ */
+const OPERATIONS = [
   'add',
   'remove',
   'replace',
@@ -52,7 +59,7 @@ class Patch {
         throw new Error('Missing "op" in JSON Patch operation')
       }
 
-      if (validOperations.indexOf(op) === -1) {
+      if (OPERATIONS.indexOf(op) === -1) {
         throw new Error('Invalid "op" in JSON Patch operation')
       }
 
@@ -75,7 +82,7 @@ class Patch {
       throw new Error('Missing "value" in JSON Patch add operation')
     }
 
-    let pointer = new Pointer(op.path)
+    let pointer = new Pointer(op.path, SILENT)
     pointer.add(target, op.value)
   }
 

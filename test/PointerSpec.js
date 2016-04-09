@@ -91,6 +91,16 @@ describe('Pointer', () => {
       pointer.expr.should.equal('/')
     })
 
+    it('should set the mode', () => {
+      let pointer = new Pointer('/', 1)
+      pointer.mode.should.equal(1)
+    })
+
+    it('should initialize the default mode', () => {
+      let pointer = new Pointer('/')
+      pointer.mode.should.equal(0)
+    })
+
     it('should parse the expression', () => {
       let pointer = new Pointer('/foo/bar')
       pointer.tokens.should.eql(['foo', 'bar'])
@@ -510,6 +520,7 @@ describe('Pointer', () => {
     })
   })
 
+
   describe('get', () => {
     describe('with valid reference', () => {
       let pointer, source
@@ -539,35 +550,96 @@ describe('Pointer', () => {
     })
 
     describe('with non-matched reference', () => {
-      it('should handle an error condition')
+      describe('in "throw" mode', () => {
+        it('should create an error condition', () => {
+          let pointer = new Pointer('/nope')
+          expect(() => pointer.get({})).to.throw('Invalid JSON Pointer reference')
+        })
+      })
+
+      describe('in "recover" mode', () => {
+        it('should return undefined', () => {
+          let RECOVER = 1
+          let pointer = new Pointer('/nope', RECOVER)
+          expect(pointer.get({})).to.be.undefined
+        })
+      })
+
+      describe('in "silent" mode', () => {
+        it('should return undefined', () => {
+          let SILENT = 2
+          let pointer = new Pointer('/nope', SILENT)
+          expect(pointer.get({})).to.be.undefined
+        })
+      })
     })
   })
 
+
+
+
   describe('add', () => {
-    let pointer, target
+    describe('with valid reference', () => {
+      let pointer, target
 
-    beforeEach(() => {
-      target = { foo: ['bar', 'baz'] }
+      beforeEach(() => {
+        target = {
+          a: { b: {} },
+          foo: ['bar', 'baz']
+        }
+      })
+
+      it('should set the referenced value on a target object', () => {
+        pointer = new Pointer('/a/b/c')
+        pointer.add(target, 'value')
+        target.a.b.c.should.equal('value')
+      })
+
+      it('should insert the referenced value into a target array', () => {
+        pointer = new Pointer('/foo/1')
+        pointer.add(target, 'qux')
+        target.foo.should.eql(['bar', 'qux', 'baz'])
+      })
+
+      it('should add the referenced value to the end of an array', () => {
+        pointer = new Pointer('/foo/-')
+        pointer.add(target, 'qux')
+        target.foo.should.eql(['bar', 'baz', 'qux'])
+      })
     })
 
-    it('should set the referenced value on a target object', () => {
-      pointer = new Pointer('/a/b/c')
-      pointer.add(target, 'value')
-      target.a.b.c.should.equal('value')
-    })
+    describe('with non-matched reference', () => {
+      describe('in "throw" mode', () => {
+        it('should create an error condition', () => {
+          let pointer = new Pointer('/invalid/json/pointer/ref')
+          expect(() => {
+            pointer.add({}, 'value')
+          }).to.throw('Invalid JSON Pointer reference')
+        })
+      })
 
-    it('should insert the referenced value into a target array', () => {
-      pointer = new Pointer('/foo/1')
-      pointer.add(target, 'qux')
-      target.foo.should.eql(['bar', 'qux', 'baz'])
-    })
+      describe('in "recover" mode', () => {
+        it('should build nested object', () => {
+          let RECOVER = 1
+          let target = {}
+          let pointer = new Pointer('/unknown/reference', RECOVER)
+          pointer.add(target, 'value')
+          target.unknown.reference.should.equal('value')
+        })
+      })
 
-    it('should add the referenced value to the end of an array', () => {
-      pointer = new Pointer('/foo/-')
-      pointer.add(target, 'qux')
-      target.foo.should.eql(['bar', 'baz', 'qux'])
+      describe('in "silent" mode', () => {
+        it('should not complete the operation', () => {
+          let SILENT = 2
+          let target = {}
+          let pointer = new Pointer('/unknown/reference', SILENT)
+          expect(() => {
+            pointer.add(target, 'value')
+          }).to.not.throw()
+          expect(target.unknown).to.be.undefined
+        })
+      })
     })
-
   })
 
   describe('replace', () => {

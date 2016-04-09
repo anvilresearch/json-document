@@ -1,6 +1,13 @@
 'use strict'
 
 /**
+ * Mode enumeration
+ */
+const THROW = 0
+const RECOVER = 1
+const SILENT = 2
+
+/**
  * Pointer
  *
  * @class
@@ -16,8 +23,9 @@ class Pointer {
    *  - option to suppress throwing errors rather than handle with
    *    try/catch blocks
    */
-  constructor (expr) {
+  constructor (expr, mode) {
     this.expr = expr
+    this.mode = mode || THROW
     this.tokens = this.parseJSONString(expr)
   }
 
@@ -92,7 +100,11 @@ class Pointer {
 
     for (let i = 0; i < tokens.length; i++) {
       if (!current || current[tokens[i]] === undefined) {
-        throw new Error('Invalid JSON Pointer reference')
+        if (this.mode !== THROW) {
+          return undefined
+        } else {
+          throw new Error('Invalid JSON Pointer reference')
+        }
       }
 
       current = current[tokens[i]]
@@ -104,7 +116,11 @@ class Pointer {
   /**
    * Add
    *
-   * @description Set a value on a target object referenced by the pointer. Put will insert an array element. To change an existing array elemnent, use `pointer.set()`
+   * @description Set a value on a target object referenced by the pointer. Put
+   * will insert an array element. To change an existing array elemnent, use
+   * `pointer.set()`
+   * @param {Object} target
+   * @param {*} value
    */
   add (target, value) {
     let tokens = this.tokens
@@ -122,7 +138,20 @@ class Pointer {
           current[token] = value
         }
       } else if (!current[token]) {
-        current = current[token] = (parseInt(token)) ? [] : {}
+        switch (this.mode) {
+          case THROW:
+            throw new Error('Invalid JSON Pointer reference')
+
+          case RECOVER:
+            current = current[token] = (parseInt(token)) ? [] : {}
+            break
+
+          case SILENT:
+            return
+
+          default:
+              throw new Error('Invalid pointer mode')
+        }
       } else {
         current = current[token]
       }
@@ -132,7 +161,8 @@ class Pointer {
   /**
    * Replace
    *
-   * @description Set a value on a target object referenced by the pointer. Set will overwrite an existing array element at the target location.
+   * @description Set a value on a target object referenced by the pointer. Set will
+   * overwrite an existing array element at the target location.
    * @param {Object} target
    * @param {*} value
    */

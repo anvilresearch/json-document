@@ -332,9 +332,9 @@ describe('Patch', () => {
         patch = new Patch()
       })
 
-      it('should add the value to the target object', () => {
+      it('should not add the value to the target object', () => {
         patch.add(op, target)
-        target.a.b.should.equal('c')
+        expect(target.a).to.be.undefined
       })
     })
   })

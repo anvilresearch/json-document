@@ -126,9 +126,11 @@ class Pointer {
     let tokens = this.tokens
     let current = target
 
+    // iterate through the tokens
     for (let i = 0; i < tokens.length; i++) {
       let token = tokens[i]
 
+      // set the property on the target location
       if (i === tokens.length - 1) {
         if (token === '-') {
           current.push(value)
@@ -137,6 +139,8 @@ class Pointer {
         } else {
           current[token] = value
         }
+
+      // handle missing target location based on "mode"
       } else if (!current[token]) {
         switch (this.mode) {
           case THROW:
@@ -152,6 +156,8 @@ class Pointer {
           default:
               throw new Error('Invalid pointer mode')
         }
+
+      // reference the next object in the path
       } else {
         current = current[token]
       }

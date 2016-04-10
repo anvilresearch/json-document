@@ -59,7 +59,7 @@ class Pointer {
    */
   parseJSONString (expr) {
     if (typeof expr !== 'string') {
-      throw new Error('Invalid JSON Pointer')
+      throw new Error('JSON Pointer must be a string')
     }
 
     if (expr === '') {
@@ -87,7 +87,36 @@ class Pointer {
     return `/${this.tokens.map(this.escape).join('/')}`
   }
 
-    /**
+  /**
+   * Parse URI Fragment Identifer
+   */
+  parseURIFragmentIdentifier (expr) {
+    if (typeof expr !== 'string') {
+      throw new Error('JSON Pointer must be a string')
+    }
+
+    if (expr.charAt(0) !== '#') {
+      throw new Error('Invalid JSON Pointer URI Fragment Identifier')
+    }
+
+    return this.parseJSONString(decodeURIComponent(expr.substr(1)))
+  }
+
+  /**
+   * To URI Fragment Identifier
+   *
+   * @description Render a URI Fragment Identifier representation of a pointer
+   * @returns {string}
+   */
+  toURIFragmentIdentifier () {
+    let value = this.tokens.map(token => {
+      return encodeURIComponent(this.escape(token))
+    }).join('/')
+
+    return `#/${value}`
+  }
+
+  /**
    * Get
    *
    * @description Get a value from the source object referenced by the pointer

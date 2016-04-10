@@ -82,7 +82,6 @@ const Pointer = require(path.join(cwd, 'src', 'Pointer'))
  *      10.1.  Normative References . . . . . . . . . . . . . . . . . . . 7
  *      10.2.  Informative References . . . . . . . . . . . . . . . . . . 7
  */
-
 describe('Pointer', () => {
 
   describe('constructor', () => {
@@ -166,7 +165,6 @@ describe('Pointer', () => {
    *    incorrect (the string '~01' correctly becomes '~1' after
    *    transformation).
    */
-
   describe('escape', () => {
     let pointer
 
@@ -290,7 +288,6 @@ describe('Pointer', () => {
    *     "/ "         7
    *     "/m~0n"      8
    */
-
   describe('parseJSONString', () => {
     describe('with a valid string argument', () => {
       let pointer
@@ -356,13 +353,17 @@ describe('Pointer', () => {
 
     describe('with an invalid string argument', () => {
       it('should create an error condition', () => {
-        expect(() => Pointer.prototype.parseJSONString('&')).to.throw()
+        expect(() => {
+          Pointer.prototype.parseJSONString('&')
+        }).to.throw('Invalid JSON Pointer')
       })
     })
 
     describe('with a non-string argument', () => {
       it('should create an error condition', () => {
-        expect(() => Pointer.prototype.parseJSONString()).to.throw()
+        expect(() => {
+          Pointer.prototype.parseJSONString()
+        }).to.throw('JSON Pointer must be a string')
       })
     })
   })
@@ -404,23 +405,89 @@ describe('Pointer', () => {
    *     #/%20        7
    *     #/m~0n       8
    */
-
   describe('parseURIFragmentIdentifier', () => {
     describe('with a valid URI fragment identifier', () => {
+      let pointer
 
+      beforeEach(() => {
+        pointer = new Pointer('')
+      })
+
+      it('should recognize a whole document reference', () => {
+        pointer.parseURIFragmentIdentifier('#').should.eql([])
+      })
+
+      it('should recognize an object property', () => {
+        pointer.parseURIFragmentIdentifier('#/foo').should.eql(['foo'])
+      })
+
+      it('should recognize an array element', () => {
+        pointer.parseURIFragmentIdentifier('#/foo/0').should.eql(['foo', '0'])
+      })
+
+      it('should recognize a root reference', () => {
+        pointer.parseURIFragmentIdentifier('#/').should.eql([''])
+      })
+
+      it('should recognize an escaped "/" character', () => {
+        pointer.parseURIFragmentIdentifier('#/a~1b').should.eql(['a/b'])
+      })
+
+      it('should recognize "%"', () => {
+        pointer.parseURIFragmentIdentifier('#/c%25d').should.eql(['c%d'])
+      })
+
+      it('should recognize "^"', () => {
+        pointer.parseURIFragmentIdentifier('#/e%5Ef').should.eql(['e^f'])
+      })
+
+      it('should recognize "|"', () => {
+        pointer.parseURIFragmentIdentifier('#/g%7Ch').should.eql(['g|h'])
+      })
+
+      it('should recognize an escaped quotation mark character', () => {
+        pointer.parseURIFragmentIdentifier('#/k%22l').should.eql(['k\"l'])
+      })
+
+      it('should recognize an escaped reverse solidus character', () => {
+        pointer.parseURIFragmentIdentifier('#/i%5Cj').should.eql(['i\\j'])
+      })
+
+      it('should recognize an escaped control character')
+
+      it('should recognize a space character', () => {
+        pointer.parseURIFragmentIdentifier('#/%20').should.eql([' '])
+      })
+
+      it('should recognize an escaped "~" character', () => {
+        pointer.parseURIFragmentIdentifier('#/m~0n').should.eql(['m~n'])
+      })
+
+      it('should recognize the "-" element of an array')
+    })
+
+    describe('with a non-string argument', () => {
+      it('should create an error condition', () => {
+        expect(() => {
+          Pointer.prototype.parseURIFragmentIdentifier()
+        }).to.throw('JSON Pointer must be a string')
+      })
     })
 
     describe('with an invalid URI fragment identifier', () => {
-      it('should create an error condition')
-    })
-
-    describe('with a non-valid URI fragment identifier', () => {
-      it('should create an error condition')
+      it('should create an error condition', () => {
+        expect(() => {
+          Pointer.prototype.parseURIFragmentIdentifier('&')
+        }).to.throw('Invalid JSON Pointer URI Fragment Identifier')
+      })
     })
   })
 
   describe('toURIFragmentIdentifier', () => {
-    it('should render a URI fragment identifier representation')
+    it('should render a URI fragment identifier representation', () => {
+      let pointer = new Pointer('/a%/b~0c/d~1f')
+      pointer.toURIFragmentIdentifier().should.equal('#/a%25/b~0c/d~1f')
+    })
   })
 
   /**

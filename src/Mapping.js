@@ -12,16 +12,22 @@ const RECOVER = 1
 
 /**
  * Mapping
+ *
+ * @class
+ * Defines a means to declaratively translate between object
+ * representations using JSON Pointer syntax.
  */
 class Mapping extends Map {
 
   /**
    * Constructor
+   *
+   * @description Translate pointers from JSON Strings into Pointer objects
+   * @param {Object} mapping
    */
   constructor (mapping) {
     super()
 
-    // cast JSON Pointer strings to Pointer instances
     Object.keys(mapping).forEach(key => {
       let value = mapping[key]
       this.set(
@@ -33,19 +39,29 @@ class Mapping extends Map {
 
   /**
    * Map
+   *
+   * @description Assign values from source to target by reading the mapping
+   * from right to left.
+   * @param {Object} target
+   * @param {Object} source
    */
   map (target, source) {
-    this.forEach((value, key) => {
-      key.add(target, value.get(source))
+    this.forEach((right, left) => {
+      left.add(target, right.get(source))
     })
   }
 
   /**
    * Project
+   *
+   * @description Assign values from source to target by reading the mapping
+   * from left to right.
+   * @param {Object} source
+   * @param {Object} target
    */
   project (source, target) {
-    this.forEach((value, key) => {
-      value.add(target, key.get(source))
+    this.forEach((right, left) => {
+      right.add(target, left.get(source))
     })
   }
 

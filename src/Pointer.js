@@ -18,10 +18,6 @@ class Pointer {
 
   /**
    * Constructor
-   *
-   * TODO:
-   *  - option to suppress throwing errors rather than handle with
-   *    try/catch blocks
    */
   constructor (expr, mode) {
     this.expr = expr

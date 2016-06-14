@@ -3,7 +3,7 @@
 /**
  * Module dependencies
  */
-const Pointer = require('./Pointer')
+const JSONPointer = require('./JSONPointer')
 
 /**
  * Modes
@@ -31,7 +31,7 @@ const OPERATIONS = [
  * Implements RFC 6902: JavaScript Object Notation (JSON) Patch
  * https://tools.ietf.org/html/rfc6902
  */
-class Patch {
+class JSONPatch {
 
   /**
    * Constructor
@@ -82,7 +82,7 @@ class Patch {
       throw new Error('Missing "value" in JSON Patch add operation')
     }
 
-    let pointer = new Pointer(op.path, SILENT)
+    let pointer = new JSONPointer(op.path, SILENT)
     pointer.add(target, op.value)
   }
 
@@ -93,7 +93,7 @@ class Patch {
    * @param {Object} target
    */
   remove (op, target) {
-    let pointer = new Pointer(op.path)
+    let pointer = new JSONPointer(op.path)
     pointer.remove(target)
   }
 
@@ -108,7 +108,7 @@ class Patch {
       throw new Error('Missing "value" in JSON Patch replace operation')
     }
 
-    let pointer = new Pointer(op.path)
+    let pointer = new JSONPointer(op.path)
     pointer.replace(target, op.value)
   }
 
@@ -127,8 +127,8 @@ class Patch {
       throw new Error('Invalid "from" in JSON Patch move operation')
     }
 
-    let pointer = new Pointer(op.path)
-    let from = new Pointer(op.from)
+    let pointer = new JSONPointer(op.path)
+    let from = new JSONPointer(op.from)
     let value = from.get(target)
 
     from.remove(target)
@@ -146,8 +146,8 @@ class Patch {
       throw new Error('Missing "from" in JSON Patch copy operation')
     }
 
-    let pointer = new Pointer(op.path)
-    let from = new Pointer(op.from)
+    let pointer = new JSONPointer(op.path)
+    let from = new JSONPointer(op.from)
     let value = from.get(target)
 
     pointer.add(target, value)
@@ -164,7 +164,7 @@ class Patch {
       throw new Error('Missing "value" in JSON Patch test operation')
     }
 
-    let pointer = new Pointer(op.path)
+    let pointer = new JSONPointer(op.path)
     let value = pointer.get(target)
 
     switch (typeof op.value) {
@@ -186,4 +186,4 @@ class Patch {
 /**
  * Exports
  */
-module.exports = Patch
+module.exports = JSONPatch

@@ -8,13 +8,13 @@ const RECOVER = 1
 const SILENT = 2
 
 /**
- * Pointer
+ * JSONPointer
  *
  * @class
  * Implements RFC 6901: JavaScript Object Notation (JSON) Pointer
  * https://tools.ietf.org/html/rfc6901
  */
-class Pointer {
+class JSONPointer {
 
   /**
    * Constructor
@@ -43,7 +43,7 @@ class Pointer {
    * Parse
    */
   static parse (expr) {
-    return new Pointer(expr)
+    return new JSONPointer(expr)
   }
 
   /**
@@ -247,4 +247,4 @@ class Pointer {
 /**
  * Exports
  */
-module.exports = Pointer
+module.exports = JSONPointer

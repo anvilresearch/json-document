@@ -19,7 +19,7 @@ let expect = chai.expect
 /**
  * Code under test
  */
-const Pointer = require(path.join(cwd, 'src', 'Pointer'))
+const JSONPointer = require(path.join(cwd, 'src', 'JSONPointer'))
 
 /**
  * Internet Engineering Task Force (IETF)                     P. Bryan, Ed.
@@ -82,26 +82,26 @@ const Pointer = require(path.join(cwd, 'src', 'Pointer'))
  *      10.1.  Normative References . . . . . . . . . . . . . . . . . . . 7
  *      10.2.  Informative References . . . . . . . . . . . . . . . . . . 7
  */
-describe('Pointer', () => {
+describe('JSONPointer', () => {
 
   describe('constructor', () => {
     it('should set the expression', () => {
-      let pointer = new Pointer('/')
+      let pointer = new JSONPointer('/')
       pointer.expr.should.equal('/')
     })
 
     it('should set the mode', () => {
-      let pointer = new Pointer('/', 1)
+      let pointer = new JSONPointer('/', 1)
       pointer.mode.should.equal(1)
     })
 
     it('should initialize the default mode', () => {
-      let pointer = new Pointer('/')
+      let pointer = new JSONPointer('/')
       pointer.mode.should.equal(0)
     })
 
     it('should parse the expression', () => {
-      let pointer = new Pointer('/foo/bar')
+      let pointer = new JSONPointer('/foo/bar')
       pointer.tokens.should.eql(['foo', 'bar'])
     })
   })
@@ -169,7 +169,7 @@ describe('Pointer', () => {
     let pointer
 
     beforeEach(() => {
-      pointer = new Pointer('')
+      pointer = new JSONPointer('')
     })
 
     it('should transform each occurence of "/" to "~1"', () => {
@@ -185,7 +185,7 @@ describe('Pointer', () => {
     let pointer
 
     beforeEach(() => {
-      pointer = new Pointer('')
+      pointer = new JSONPointer('')
     })
 
     it('should transform each occurence of "~1" to "/"', () => {
@@ -293,7 +293,7 @@ describe('Pointer', () => {
       let pointer
 
       beforeEach(() => {
-        pointer = new Pointer('')
+        pointer = new JSONPointer('')
       })
 
       it('should recognize a whole document reference', () => {
@@ -354,7 +354,7 @@ describe('Pointer', () => {
     describe('with an invalid string argument', () => {
       it('should create an error condition', () => {
         expect(() => {
-          Pointer.prototype.parseJSONString('&')
+          JSONPointer.prototype.parseJSONString('&')
         }).to.throw('Invalid JSON Pointer')
       })
     })
@@ -362,7 +362,7 @@ describe('Pointer', () => {
     describe('with a non-string argument', () => {
       it('should create an error condition', () => {
         expect(() => {
-          Pointer.prototype.parseJSONString()
+          JSONPointer.prototype.parseJSONString()
         }).to.throw('JSON Pointer must be a string')
       })
     })
@@ -370,7 +370,7 @@ describe('Pointer', () => {
 
   describe('toJSONString', () => {
     it('should render a JSON string representation', () => {
-      let pointer = new Pointer('/a/b~0c/d~1f')
+      let pointer = new JSONPointer('/a/b~0c/d~1f')
       pointer.toJSONString().should.equal('/a/b~0c/d~1f')
     })
   })
@@ -410,7 +410,7 @@ describe('Pointer', () => {
       let pointer
 
       beforeEach(() => {
-        pointer = new Pointer('')
+        pointer = new JSONPointer('')
       })
 
       it('should recognize a whole document reference', () => {
@@ -469,7 +469,7 @@ describe('Pointer', () => {
     describe('with a non-string argument', () => {
       it('should create an error condition', () => {
         expect(() => {
-          Pointer.prototype.parseURIFragmentIdentifier()
+          JSONPointer.prototype.parseURIFragmentIdentifier()
         }).to.throw('JSON Pointer must be a string')
       })
     })
@@ -477,7 +477,7 @@ describe('Pointer', () => {
     describe('with an invalid URI fragment identifier', () => {
       it('should create an error condition', () => {
         expect(() => {
-          Pointer.prototype.parseURIFragmentIdentifier('&')
+          JSONPointer.prototype.parseURIFragmentIdentifier('&')
         }).to.throw('Invalid JSON Pointer URI Fragment Identifier')
       })
     })
@@ -485,7 +485,7 @@ describe('Pointer', () => {
 
   describe('toURIFragmentIdentifier', () => {
     it('should render a URI fragment identifier representation', () => {
-      let pointer = new Pointer('/a%/b~0c/d~1f')
+      let pointer = new JSONPointer('/a%/b~0c/d~1f')
       pointer.toURIFragmentIdentifier().should.equal('#/a%25/b~0c/d~1f')
     })
   })
@@ -583,7 +583,7 @@ describe('Pointer', () => {
    */
   describe('parse (static)', () => {
     it('should return a pointer instance', () => {
-      Pointer.parse('/').should.be.instanceof(Pointer)
+      JSONPointer.parse('/').should.be.instanceof(JSONPointer)
     })
   })
 
@@ -606,12 +606,12 @@ describe('Pointer', () => {
       })
 
       it('should return the referenced value from a source object property', () => {
-        pointer = new Pointer('/a/b/c')
+        pointer = new JSONPointer('/a/b/c')
         pointer.get(source).should.equal('value')
       })
 
       it('should return the referenced value from a source array property', () => {
-        pointer = new Pointer('/a/d/0/e')
+        pointer = new JSONPointer('/a/d/0/e')
         pointer.get(source).should.equal('e')
       })
     })
@@ -619,7 +619,7 @@ describe('Pointer', () => {
     describe('with non-matched reference', () => {
       describe('in "throw" mode', () => {
         it('should create an error condition', () => {
-          let pointer = new Pointer('/nope')
+          let pointer = new JSONPointer('/nope')
           expect(() => pointer.get({})).to.throw('Invalid JSON Pointer reference')
         })
       })
@@ -627,7 +627,7 @@ describe('Pointer', () => {
       describe('in "recover" mode', () => {
         it('should return undefined', () => {
           let RECOVER = 1
-          let pointer = new Pointer('/nope', RECOVER)
+          let pointer = new JSONPointer('/nope', RECOVER)
           expect(pointer.get({})).to.be.undefined
         })
       })
@@ -635,7 +635,7 @@ describe('Pointer', () => {
       describe('in "silent" mode', () => {
         it('should return undefined', () => {
           let SILENT = 2
-          let pointer = new Pointer('/nope', SILENT)
+          let pointer = new JSONPointer('/nope', SILENT)
           expect(pointer.get({})).to.be.undefined
         })
       })
@@ -657,19 +657,19 @@ describe('Pointer', () => {
       })
 
       it('should set the referenced value on a target object', () => {
-        pointer = new Pointer('/a/b/c')
+        pointer = new JSONPointer('/a/b/c')
         pointer.add(target, 'value')
         target.a.b.c.should.equal('value')
       })
 
       it('should insert the referenced value into a target array', () => {
-        pointer = new Pointer('/foo/1')
+        pointer = new JSONPointer('/foo/1')
         pointer.add(target, 'qux')
         target.foo.should.eql(['bar', 'qux', 'baz'])
       })
 
       it('should add the referenced value to the end of an array', () => {
-        pointer = new Pointer('/foo/-')
+        pointer = new JSONPointer('/foo/-')
         pointer.add(target, 'qux')
         target.foo.should.eql(['bar', 'baz', 'qux'])
       })
@@ -678,7 +678,7 @@ describe('Pointer', () => {
     describe('with non-matched reference', () => {
       describe('in "throw" mode', () => {
         it('should create an error condition', () => {
-          let pointer = new Pointer('/invalid/json/pointer/ref')
+          let pointer = new JSONPointer('/invalid/json/pointer/ref')
           expect(() => {
             pointer.add({}, 'value')
           }).to.throw('Invalid JSON Pointer reference')
@@ -689,7 +689,7 @@ describe('Pointer', () => {
         it('should build nested object', () => {
           let RECOVER = 1
           let target = {}
-          let pointer = new Pointer('/unknown/reference', RECOVER)
+          let pointer = new JSONPointer('/unknown/reference', RECOVER)
           pointer.add(target, 'value')
           target.unknown.reference.should.equal('value')
         })
@@ -699,7 +699,7 @@ describe('Pointer', () => {
         it('should not complete the operation', () => {
           let SILENT = 2
           let target = {}
-          let pointer = new Pointer('/unknown/reference', SILENT)
+          let pointer = new JSONPointer('/unknown/reference', SILENT)
           expect(() => {
             pointer.add(target, 'value')
           }).to.not.throw()
@@ -717,13 +717,13 @@ describe('Pointer', () => {
     })
 
     it('should replace the referenced value on a target object', () => {
-      pointer = new Pointer('/a/b/c')
+      pointer = new JSONPointer('/a/b/c')
       pointer.replace(target, 'value')
       target.a.b.c.should.equal('value')
     })
 
     it('should replace the referenced value on a target array', () => {
-      pointer = new Pointer('/a/d/3/e')
+      pointer = new JSONPointer('/a/d/3/e')
       pointer.replace(target, 'value')
       target.a.d[3].e.should.equal('value')
     })
@@ -737,13 +737,13 @@ describe('Pointer', () => {
     })
 
     it('should remove the referenced value from a target object', () => {
-      pointer = new Pointer('/a/b')
+      pointer = new JSONPointer('/a/b')
       pointer.remove(target)
       expect(target.a.b).to.be.undefined
     })
 
     it('should remove the referenced value from a target array', () => {
-      pointer = new Pointer('/a/b/1')
+      pointer = new JSONPointer('/a/b/1')
       pointer.remove(target)
       target.a.b.should.eql([0, 2])
     })

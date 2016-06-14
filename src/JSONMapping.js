@@ -3,21 +3,21 @@
 /**
  * Module dependencies
  */
-const Pointer = require('./Pointer')
+const JSONPointer = require('./JSONPointer')
 
 /**
- * Pointer mode
+ * JSONPointer mode
  */
 const RECOVER = 1
 
 /**
- * Mapping
+ * JSONMapping
  *
  * @class
  * Defines a means to declaratively translate between object
  * representations using JSON Pointer syntax.
  */
-class Mapping extends Map {
+class JSONMapping extends Map {
 
   /**
    * Constructor
@@ -31,8 +31,8 @@ class Mapping extends Map {
     Object.keys(mapping).forEach(key => {
       let value = mapping[key]
       this.set(
-        new Pointer(key, RECOVER),
-        new Pointer(value, RECOVER)
+        new JSONPointer(key, RECOVER),
+        new JSONPointer(value, RECOVER)
       )
     })
   }
@@ -70,4 +70,4 @@ class Mapping extends Map {
 /**
  * Exports
  */
-module.exports = Mapping
+module.exports = JSONMapping

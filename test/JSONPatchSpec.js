@@ -19,7 +19,7 @@ let expect = chai.expect
 /**
  * Code under test
  */
-const Patch = require(path.join(cwd, 'src', 'Patch'))
+const JSONPatch = require(path.join(cwd, 'src', 'JSONPatch'))
 
 /**
  * Internet Engineering Task Force (IETF)                     P. Bryan, Ed.
@@ -68,7 +68,7 @@ const Patch = require(path.join(cwd, 'src', 'Patch'))
  *    the Trust Legal Provisions and are provided without warranty as
  *    described in the Simplified BSD License.
  */
-describe('Patch', () => {
+describe('JSONPatch', () => {
 
   /**
    * 1.  Introduction
@@ -141,7 +141,7 @@ describe('Patch', () => {
     })
 
     it('should set operations', () => {
-      patch = new Patch(source)
+      patch = new JSONPatch(source)
       patch.ops.should.equal(source)
     })
   })
@@ -180,21 +180,21 @@ describe('Patch', () => {
     let patch
 
     it('should verify the presence of "op"', () => {
-      patch = new Patch([{}])
+      patch = new JSONPatch([{}])
       expect(() => {
         patch.apply({})
       }).to.throw('Missing "op" in JSON Patch operation')
     })
 
     it('should validate the value of "op"', () => {
-      patch = new Patch([{ op: 'unknown' }])
+      patch = new JSONPatch([{ op: 'unknown' }])
       expect(() => {
         patch.apply({})
       }).to.throw('Invalid "op" in JSON Patch operation')
     })
 
     it('should verify the presence of "path"', () => {
-      patch = new Patch([{ op: 'add' }])
+      patch = new JSONPatch([{ op: 'add' }])
       expect(() => {
         patch.apply({})
       }).to.throw('Missing "path" in JSON Patch operation')
@@ -271,7 +271,7 @@ describe('Patch', () => {
 
     describe('with all operations', () => {
       it('should verify the presence of "value"', () => {
-        let patch = new Patch()
+        let patch = new JSONPatch()
         expect(() => {
           patch.add({ op: 'add', path: '/a/b/c' }, {})
         }).to.throw('Missing "value" in JSON Patch add operation')
@@ -284,7 +284,7 @@ describe('Patch', () => {
       before(() => {
         target = { a: ['x', 'z'] }
         op = { path: '/a/1', value: 'y' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should insert the value at the specified index', () => {
@@ -299,7 +299,7 @@ describe('Patch', () => {
       before(() => {
         target = { a: {} }
         op = { path: '/a/b', value: 'c' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should add the value to the target object', () => {
@@ -314,7 +314,7 @@ describe('Patch', () => {
       before(() => {
         target = { a: { b: 'c' } }
         op = { path: '/a/b', value: 'x' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should replace the value on the target object', () => {
@@ -329,7 +329,7 @@ describe('Patch', () => {
       before(() => {
         target = {}
         op = { path: '/a/b', value: 'c' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should not add the value to the target object', () => {
@@ -360,7 +360,7 @@ describe('Patch', () => {
       before(() => {
         target = { a: { b: { c: 'c' } } }
         op = { path: '/a/b/c' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should delete the value from the container object', () => {
@@ -375,7 +375,7 @@ describe('Patch', () => {
       before(() => {
         target = { a: { b: [ { c: 'c' }, { d: 'd' } ] } }
         op = { path: '/a/b/0' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should splice the element from the array', () => {
@@ -409,7 +409,7 @@ describe('Patch', () => {
   describe('replace', () => {
     describe('with all operations', () => {
       it('should verify the presence of "value"', () => {
-        let patch = new Patch()
+        let patch = new JSONPatch()
         expect(() => {
           patch.replace({ op: 'replace', path: '/a/b/c' }, {})
         }).to.throw('Missing "value" in JSON Patch replace operation')
@@ -422,7 +422,7 @@ describe('Patch', () => {
       before(() => {
         target = { a: { b: [{}, {}, {}] } }
         op = { path: '/a/b/1', value: { c: 42 } }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should replace the value at the specified index', () => {
@@ -441,7 +441,7 @@ describe('Patch', () => {
       before(() => {
         target = { a: { b: {} } }
         op = { path: '/a/b/c', value: 42 }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should replace the value on the target object', () => {
@@ -481,14 +481,14 @@ describe('Patch', () => {
   describe('move', () => {
     describe('with all operations', () => {
       it('should verify the presence of "from"', () => {
-        let patch = new Patch()
+        let patch = new JSONPatch()
         expect(() => {
           patch.move({ op: 'move', path: '/a/b/c' }, {})
         }).to.throw('Missing "from" in JSON Patch move operation')
       })
 
       it('should verify "from" is not a prefix of "path"', () => {
-        let patch = new Patch()
+        let patch = new JSONPatch()
         expect(() => {
           patch.move({
             op: 'move',
@@ -509,7 +509,7 @@ describe('Patch', () => {
       beforeEach(() => {
         target = { a: { b: { c: 42 } } }
         op = { op: 'move', from: '/a/b/c', path: '/a/b/d' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should remove existing value from the target', () => {
@@ -547,14 +547,14 @@ describe('Patch', () => {
   describe('copy', () => {
     describe('with all operations', () => {
       it('should verify the presence of "from"', () => {
-        let patch = new Patch()
+        let patch = new JSONPatch()
         expect(() => {
           patch.copy({ op: 'copy', path: '/a/b/c' }, {})
         }).to.throw('Missing "from" in JSON Patch copy operation')
       })
 
       it('should verify "from" location exists', () => {
-        let patch = new Patch()
+        let patch = new JSONPatch()
         expect(() => {
           patch.copy({
             op: 'copy',
@@ -571,7 +571,7 @@ describe('Patch', () => {
       beforeEach(() => {
         target = { a: { b: { c: 42 } } }
         op = { op: 'copy', from: '/a/b/c', path: '/a/b/e' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should not remove existing value from the target', () => {
@@ -635,7 +635,7 @@ describe('Patch', () => {
     describe('with missing operation value', () => {
       it('should create an error condition', () => {
         expect(() => {
-          let patch = new Patch()
+          let patch = new JSONPatch()
           patch.test({ op: 'test', path: '/foo' }, {})
         }).to.throw('Missing "value" in JSON Patch test operation')
       })
@@ -647,7 +647,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: 'bar' }
         op = { op: 'test', path: '/foo', value: 'bar' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should not create an error condition', () => {
@@ -663,7 +663,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: 'bar' }
         op = { op: 'test', path: '/foo', value: 'baz' }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should create an error condition', () => {
@@ -679,7 +679,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: 42 }
         op = { op: 'test', path: '/foo', value: 42 }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should not create an error condition', () => {
@@ -695,7 +695,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: 42 }
         op = { op: 'test', path: '/foo', value: 43 }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should create an error condition', () => {
@@ -727,7 +727,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: true }
         op = { op: 'test', path: '/foo', value: true }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should not create an error condition', () => {
@@ -743,7 +743,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: true }
         op = { op: 'test', path: '/foo', value: false }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should create an error condition', () => {
@@ -759,7 +759,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: null }
         op = { op: 'test', path: '/foo', value: null }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should not create an error condition', () => {
@@ -775,7 +775,7 @@ describe('Patch', () => {
       before(() => {
         target = { foo: null }
         op = { op: 'test', path: '/foo', value: false }
-        patch = new Patch()
+        patch = new JSONPatch()
       })
 
       it('should create an error condition', () => {
@@ -947,7 +947,7 @@ describe('Patch', () => {
         foo: 'bar'
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         {
           op: 'add',
           path: '/baz',
@@ -990,7 +990,7 @@ describe('Patch', () => {
         foo: [ 'bar', 'baz' ]
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         {
           op: 'add',
           path: '/foo/1',
@@ -1040,7 +1040,7 @@ describe('Patch', () => {
         foo: 'bar'
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         {
           op: 'remove',
           path: '/baz'
@@ -1085,7 +1085,7 @@ describe('Patch', () => {
         ]
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         {
           op: 'remove',
           path: '/foo/1'
@@ -1136,7 +1136,7 @@ describe('Patch', () => {
         foo: 'bar'
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         {
           op: 'replace',
           path: '/baz',
@@ -1201,7 +1201,7 @@ describe('Patch', () => {
         }
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         {
           op: 'move',
           from: '/foo/waldo',
@@ -1249,7 +1249,7 @@ describe('Patch', () => {
         foo: ['all', 'grass', 'cows', 'eat']
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         {
           op: 'move',
           from: '/foo/1',
@@ -1292,7 +1292,7 @@ describe('Patch', () => {
         foo: ['a', 2, 'c']
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'test', path: '/baz', value: 'qux' },
         { op: 'test', path: '/foo/1', value: 2 }
       ])
@@ -1326,7 +1326,7 @@ describe('Patch', () => {
         baz: 'qux'
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'test', path: '/baz', value: 'bar' }
       ])
     })
@@ -1369,7 +1369,7 @@ describe('Patch', () => {
         foo: 'bar'
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'add', path: '/child', value: { grandchild: {} } }
       ])
     })
@@ -1414,7 +1414,7 @@ describe('Patch', () => {
         foo: 'bar'
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'add', path: '/baz', value: 'qux', xyz: 123 }
       ])
     })
@@ -1455,7 +1455,7 @@ describe('Patch', () => {
         foo: 'bar'
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'add', path: '/baz/bat', value: 'qux' }
       ])
     })
@@ -1514,7 +1514,7 @@ describe('Patch', () => {
         '~1': 10
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'test', path: '/~01', value: 10 }
       ])
     })
@@ -1556,7 +1556,7 @@ describe('Patch', () => {
         '~1': 10
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'test', path: '/~01', value: "10" }
       ])
     })
@@ -1594,7 +1594,7 @@ describe('Patch', () => {
         foo: ['bar']
       }
 
-      patch = new Patch([
+      patch = new JSONPatch([
         { op: 'add', path: '/foo/-', value: ['abc', 'def'] }
       ])
     })

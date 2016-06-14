@@ -26,7 +26,7 @@ const JSONSchema = require(path.join(cwd, 'src', 'JSONSchema'))
  */
 describe('JSONSchema', () => {
 
-  describe.only('constructor', () => {
+  describe('constructor', () => {
     it('should accept JSON string argument')
 
     it('should create JSONSchema instance', () => {

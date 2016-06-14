@@ -19,12 +19,12 @@ let expect = chai.expect
 /**
  * Code under test
  */
-const Mapping = require(path.join(cwd, 'src', 'Mapping'))
+const JSONMapping = require(path.join(cwd, 'src', 'JSONMapping'))
 
 /**
  * Tests
  */
-describe('Mapping', () => {
+describe('JSONMapping', () => {
 
   describe('constructor', () => {
     it('should cast JSON Pointer strings to Pointer objects')
@@ -34,7 +34,7 @@ describe('Mapping', () => {
     let mapping, target, source
 
     beforeEach(() => {
-      mapping = new Mapping({
+      mapping = new JSONMapping({
         '/foo': '/foo/0',
         '/bar': '/alpha/bravo'
       })
@@ -61,7 +61,7 @@ describe('Mapping', () => {
     let mapping, target, source
 
     beforeEach(() => {
-      mapping = new Mapping({
+      mapping = new JSONMapping({
         '/foo': '/foo/0',
         '/bar': '/alpha/bravo'
       })
@@ -77,7 +77,6 @@ describe('Mapping', () => {
     })
 
     it('should read from source and write to target', () => {
-      console.log('TARGET', target)
       target.foo[0].should.equal('bar')
       target.alpha.bravo.should.equal('charlie')
     })

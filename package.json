@@ -19,6 +19,7 @@
   "devDependencies": {
     "benchmark": "^2.1.0",
     "chai": "^3.5.0",
+    "json-schema-test-suite": "0.0.10",
     "sinon": "^1.17.3",
     "sinon-chai": "^2.8.0"
   }

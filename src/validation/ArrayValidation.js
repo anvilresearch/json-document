@@ -16,7 +16,7 @@ const KEYWORDS = [
   'items',
   'maxItems',
   'minItems',
-  'uniqueItems',
+  'uniqueItems'
 ]
 
 /**

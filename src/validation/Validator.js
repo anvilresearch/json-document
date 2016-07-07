@@ -34,7 +34,7 @@ class Validator {
     let body = `
     let value
     let validation = { valid: true, errors: [] }
-    ${validation.compile('', true)}
+    ${validation.compile('', required)}
     return validation
     `
 

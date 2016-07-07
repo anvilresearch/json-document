@@ -7,6 +7,18 @@
 const Validation = require('./validation')
 
 /**
+ * Keywords
+ * @ignore
+ */
+const KEYWORDS = [
+  'maxLength',
+  'minLength',
+  'pattern',
+  'format',
+  'enum'
+]
+
+/**
  * StringValidation
  * 3.1; 5.2
  */
@@ -15,10 +27,14 @@ class StringValidation extends Validation {
   /**
    * Type
    */
-  type () {
+  type (pointer) {
     return `
-    if (typeof ${this.ref} !== 'string') {
-      errors.push({ message: '${this.ref} must be a string' })
+    // VALIDATE TYPE
+    if (value !== undefined && typeof value !== 'string') {
+      validation.valid = false
+      validation.errors.push({
+        message: '"${pointer}" must be a string'
+      })
     }
     `
   }
@@ -26,46 +42,99 @@ class StringValidation extends Validation {
   /**
    * Max Length
    */
-  maxLength () {
-    let {operation:{maxLength,message}} = this
+  maxLength (pointer) {
+    let {schema:{maxLength,message}} = this
 
     if (maxLength) {
       return `
-      if (${this.ref}.length > ${maxLength}) {
-        errors.push({ message })
+      // VALIDATE MAXLENGTH
+      if (value.length > ${maxLength}) {
+        validation.valid = false
+        validation.errors.push({
+          message: ${message} || '"${pointer}" is too long'
+        })
       }
       `
     }
   }
 
   /**
-   * Etc
+   * Min Length
    */
-  minLength () {}
-  defaultValue () {}
-  pattern () {}
-  format () {}
+  minLength (pointer) {
+    let {schema:{minLength,message}} = this
+
+    if (minLength) {
+      return `
+      // VALIDATE MINLENGTH
+      if (value.length < ${minLength}) {
+        validation.valid = false
+        validation.errors.push({
+          message: ${message} || '"${pointer}" is too short'
+        })
+      }
+      `
+    }
+  }
 
   /**
-   * compile
+   * Default value
    */
-  compile (pointer) {
-    let validations = [
-      'type',
-      'maxLength',
-      'minLength',
-      'pattern',
-      'format',
-      'enum'
-    ]
+  defaultValue () {}
 
-    return `
+  /**
+   * Pattern
+   */
+  pattern () {
+    return ``
+  }
 
-    // string validation for ${this.ref}
-    if (data.${this.ref}) { // we need to deal with null guards for nested objects
-    ${validations.map(validation => this[validation]()).filter(block => !!block).join()}
+  /**
+   * Format
+   */
+  format () {
+    return ``
+  }
+
+  /**
+   * Compile
+   */
+  compile (pointer, required) {
+    let {schema} = this
+
+    let block = ''
+
+    block += this.reference(pointer)
+
+    // VALIDATE REQUIRED
+    if (required) {
+      block += this.required(pointer)
     }
-    `
+
+    // VALIDATE TYPE
+    block += this.type(pointer)
+
+    // VALIDATE OTHER KEYWORDS
+    let others = Object.keys(schema).filter(keyword => {
+      return KEYWORDS.indexOf(keyword) !== -1
+    })
+
+    if (others.length > 0) {
+      block += `
+      // OTHER VALIDATIONS
+      else if (value !== undefined) {
+      `
+
+      others.forEach(keyword => {
+        block += this[keyword](pointer)
+      })
+
+      block += `
+      }
+      `
+    }
+
+    return block
   }
 }
 

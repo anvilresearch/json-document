@@ -39,6 +39,42 @@ class Validation {
     this.pointer = pointer
   }
 
+  /**
+   * Reference
+   */
+  reference (pointer) {
+    let chain = pointer && pointer.split('.')
+
+    let block = `
+    // ASSIGN
+    value = data`
+
+    chain && chain.forEach((token, index) => {
+      let reference = `data.${ chain.slice(0, index).join('.') }`
+      block += ` && ${reference}`
+    })
+
+    block += `
+    `
+
+    return block
+
+  }
+
+  /**
+   * Required
+   */
+  required (pointer) {
+    return `
+    // VALIDATE REQUIRED
+    if (value === undefined) {
+      validation.valid = false
+      validation.errors.push({
+        message: '"${pointer}" is required'
+      })
+    } else
+    `
+  }
   enum () {}
   allOf () {}
   anyOf () {}

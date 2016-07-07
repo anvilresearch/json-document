@@ -4,6 +4,7 @@
  * Dependencies
  * @ignore
  */
+const Validation = require('./Validation')
 
 /**
  * Mapping of JSON Schema types to code generation classes
@@ -26,10 +27,19 @@ class Validator {
   /**
    * Compile
    */
-  static compile (schema) {
-    let type = JSONSchema.determineType(schema)
+  static compile (schema, required) {
+    let type = Validation.determineType(schema)
     let validation = new TypeValidatorMapping[type](schema)
-    return new Function ('data', validation.compile(pointer))
+
+    let body = `
+    let value
+    let validation = { valid: true, errors: [] }
+    ${validation.compile('', true)}
+    return validation
+    `
+
+    console.log(body)
+    return new Function('data', body)
   }
 }
 

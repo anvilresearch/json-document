@@ -4,18 +4,26 @@
  * Dependencies
  * @ignore
  */
-const Validation = require('./validation')
+const NumberValidation = require('./NumberValidation')
 
 /**
  * IntegerValidation
  */
-class IntegerValidation extends Validation {
-  type () {}
-  multipleOf () {}
-  maximum () {}
-  exclusiveMaximum () {}
-  minimum () {}
-  exclusiveMinimum () {}
+class IntegerValidation extends NumberValidation {
+
+  /**
+   * Type
+   */
+  type (pointer) {
+    return `
+    if (value !== undefined && !Number.isInteger(value)) {
+      validation.valid = false
+      validation.errors.push({
+        message: '"${pointer}" must be an integer'
+      })
+    }
+    `
+  }
 }
 
 /**

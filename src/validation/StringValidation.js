@@ -85,8 +85,20 @@ class StringValidation extends Validation {
   /**
    * Pattern
    */
-  pattern () {
-    return ``
+  pattern (pointer) {
+    let {schema:{pattern,message}} = this
+
+    if (pattern) {
+      return `
+      // PATTERN
+      if (!value.match(${pattern})) {
+        validation.valid = false
+        validation.errors.push({
+          message: ${message} || '"${pointer}" does not match the required pattern'
+        })
+      }
+      `
+    }
   }
 
   /**

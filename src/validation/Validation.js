@@ -58,7 +58,6 @@ class Validation {
     `
 
     return block
-
   }
 
   /**
@@ -75,11 +74,35 @@ class Validation {
     } else
     `
   }
+
+  /**
+   * Enum
+   */
   enum () {}
+
+  /**
+   * All Of
+   */
   allOf () {}
+
+  /**
+   * Any Of
+   */
   anyOf () {}
+
+  /**
+   * One Of
+   */
   oneOf () {}
+
+  /**
+   * Not
+   */
   not () {}
+
+  /**
+   * Definitions
+   */
   definitions () {}
 
   /**

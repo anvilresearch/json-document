@@ -90,7 +90,7 @@ class StringValidation extends Validation {
 
     if (pattern) {
       return `
-      // PATTERN
+      // VALIDATE PATTERN
       if (!value.match(${pattern})) {
         validation.valid = false
         validation.errors.push({

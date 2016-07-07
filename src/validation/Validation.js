@@ -78,7 +78,19 @@ class Validation {
   /**
    * Enum
    */
-  enum () {}
+  enum (pointer) {
+    let {schema:{enum: enumerated}} = this
+
+    return `
+    // VALIDATE ENUM
+    if (${JSON.stringify(enumerated)}.indexOf(value) === -1) {
+      validation.valid = false
+      validation.errors.push({
+        message: value + ' is not an accepted value'
+      })
+    }
+    `
+  }
 
   /**
    * All Of

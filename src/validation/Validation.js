@@ -136,13 +136,11 @@ class Validation {
   static determineType (schema) {
     if (!schema.type) {
       // destructure keywords from schema for type inference
-      // we don't need number/integer keywords because we can't
-      // infer them
       let {
-        type, minLength, maxLength, pattern, minItems, maxItems, items,
-        additionalItems, uniqueItems, properties, additionalProperties,
-        required, minProperties, maxProperties, dependencies,
-        patternProperties
+        type, minLength, maxLength, pattern, minimum, maximum, exclusiveMinimum,
+        exclusiveMaximum, multipleOf, minItems, maxItems, items, additionalItems,
+        uniqueItems, properties, additionalProperties, required, minProperties,
+        maxProperties, dependencies, patternProperties
       } = schema
 
       // check properties for indicators of the type
@@ -171,20 +169,30 @@ class Validation {
         pattern
       )
 
+      let isNumber = Boolean(
+        minimum ||
+        maximum ||
+        exclusiveMinimum ||
+        exclusiveMaximum ||
+        multipleOf
+      )
+
       // If multiple types can be inferred, let the order of preference
       // be "object", then "array", then "string".
       //
       // "null" and "boolean" cannot be inferred because they have no
       // type-specific keywords
       //
-      // "number" and "integer" cannot be inferred because they have
-      // ambiguous keywords
+      // In the case that number/integer keywords are present without
+      // an explicit type, treat the schema as a number.
       if (isObject) {
         schema.type = 'object'
       } else if (isArray) {
         schema.type = 'array'
       } else if (isString) {
         schema.type = 'string'
+      } else if (isNumber) {
+        schema.type = 'number'
       } else {
         throw new Error('Invalid schema definition')
       }

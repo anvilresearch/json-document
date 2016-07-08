@@ -48,7 +48,7 @@ class StringValidation extends Validation {
     if (maxLength) {
       return `
       // VALIDATE MAXLENGTH
-      if (value.length > ${maxLength}) {
+      if (Array.from(value).length > ${maxLength}) {
         validation.valid = false
         validation.errors.push({
           message: ${message} || '"${pointer}" is too long'
@@ -67,7 +67,7 @@ class StringValidation extends Validation {
     if (minLength) {
       return `
       // VALIDATE MINLENGTH
-      if (value.length < ${minLength}) {
+      if (Array.from(value).length < ${minLength}) {
         validation.valid = false
         validation.errors.push({
           message: ${message} || '"${pointer}" is too short'

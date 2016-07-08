@@ -50,7 +50,7 @@ class Validation {
     value = data`
 
     chain && chain.forEach((token, index) => {
-      let reference = `data.${ chain.slice(0, index).join('.') }`
+      let reference = `data.${ chain.slice(0, index + 1).join('.') }`
       block += ` && ${reference}`
     })
 

@@ -38,7 +38,6 @@ class Validator {
     return validation
     `
 
-    console.log(body)
     return new Function('data', body)
   }
 }

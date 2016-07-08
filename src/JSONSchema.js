@@ -4,6 +4,7 @@
  * Module dependencies
  */
 const Initializer = require('./Initializer')
+const Validator = require('./validation/Validator')
 
 /**
  * Types
@@ -33,14 +34,24 @@ class JSONSchema {
    * @param {Object} schema
    */
   constructor (schema) {
-    // parse JSON string?
-    let proto = this.constructor.prototype
-
-    //let initializer = new Initializer(schema)
-    //initializer.parse()
-    //proto.initialize = initializer.compile()
-    // proto.validate = Validator.compile(schema)
+    // TODO: optionally parse JSON string?
     Object.assign(this, schema)
+
+    let initializer = new Initializer(schema)
+    initializer.parse()
+
+    Object.defineProperties(this, {
+      initialize: {
+        enumerable: false,
+        writeable: false,
+        value: initializer.compile()
+      },
+      validate: {
+        enumerable: false,
+        writeable: false,
+        value: Validator.compile(schema)
+      }
+    })
   }
 
   /**

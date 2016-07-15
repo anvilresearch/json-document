@@ -140,7 +140,7 @@ class Validation {
         type, minLength, maxLength, pattern, minimum, maximum, exclusiveMinimum,
         exclusiveMaximum, multipleOf, minItems, maxItems, items, additionalItems,
         uniqueItems, properties, additionalProperties, required, minProperties,
-        maxProperties, dependencies, patternProperties
+        maxProperties, dependencies, patternProperties, format
       } = schema
 
       // check properties for indicators of the type
@@ -166,7 +166,8 @@ class Validation {
       let isString = Boolean(
         minLength ||
         maxLength ||
-        pattern
+        pattern ||
+        format
       )
 
       let isNumber = Boolean(

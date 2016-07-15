@@ -28,7 +28,7 @@ const TypeValidatorMapping = {
  */
 const KEYWORDS = [
   'maxProperties',
-  //'minProperties',
+  'minProperties',
   //'required',
   //'additionalProperties',
   'properties',
@@ -84,7 +84,18 @@ class ObjectValidation extends Validation {
   /**
    * Min Properties
    */
-  minProperties (pointer) {}
+  minProperties (pointer) {
+    let {schema:{minProperties}} = this
+
+    return `
+    if (Object.keys(data).length < ${minProperties}) {
+      validation.valid = false
+      validation.errors.push({
+        message: '${pointer} has too few properties'
+      })
+    }
+    `
+  }
 
   /**
    * Default Value

@@ -27,7 +27,7 @@ const TypeValidatorMapping = {
  * @ignore
  */
 const KEYWORDS = [
-  //'maxProperties',
+  'maxProperties',
   //'minProperties',
   //'required',
   //'additionalProperties',
@@ -68,7 +68,18 @@ class ObjectValidation extends Validation {
   /**
    * Max Properties
    */
-  maxProperties (pointer) {}
+  maxProperties (pointer) {
+    let {schema:{maxProperties}} = this
+
+    return `
+    if (Object.keys(data).length > ${maxProperties}) {
+      validation.valid = false
+      validation.errors.push({
+        message: '${pointer} has too many properties'
+      })
+    }
+    `
+  }
 
   /**
    * Min Properties

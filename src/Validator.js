@@ -155,6 +155,36 @@ class Validator {
   }
 
   /**
+   * Type-specific validations
+   *
+   * Type checking is optional in JSON Schema, and a schema can allow multiple
+   * types. Generated code needs to apply type-specific validations only to
+   * appropriate values, and ignore everything else. Type validation itself is
+   * handled separately from other validation keywords.
+   *
+   * The methods `array`, `number`, `object`, `string` generate type-specific
+   * validation code blocks, wrapped in a conditional such that they will only
+   * be applied to values of that type.
+   *
+   * For example, the `number` method, given the schema
+   *
+   *     { minimum: 3 }
+   *
+   * will generate
+   *
+   *     if (typeof value === 'number') {
+   *       if (value < 3) {
+   *         valid = false
+   *         errors.push({ message: '...' })
+   *       }
+   *     }
+   *
+   * Integer values are also numbers, and are validated the same as numbers
+   * other than the type validation itself. Therefore no `integer` method is
+   * needed.
+   */
+
+  /**
    * Array
    */
   array () {
@@ -494,7 +524,7 @@ class Validator {
         // additional items
         for (var i = ${items.length}; i < value.length; i++) {
           // TODO
-          // create a new validation object and recusrse
+          // create a new validation object and recurse
           // we'll need to modify this.reference() to accommodate arrays
           // and deal with restoring the referece to parent for subsequent
           // validations of that property

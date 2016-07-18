@@ -4,7 +4,7 @@
  * Module dependencies
  */
 const Initializer = require('./Initializer')
-const Validator = require('./validation/Validator')
+const Validator = require('./Validator')
 
 /**
  * Types

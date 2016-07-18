@@ -93,11 +93,6 @@ class Validator {
     block += this.object()
     block += this.string()
 
-
-    // TODO invoke generic methods
-    //block += this.enum()
-
-
     return block
   }
 
@@ -461,16 +456,13 @@ class Validator {
 
   /**
    * Required
-   *
-   *
-   * TODO: THIS IS WRONG; SHOULD BE CALLED FROM this.object()
    */
   required () {
     let {schema:{properties}} = this
     let block = ``
 
     block += `
-      // omfg it's missing!!
+      // validate presence
       if (value === undefined) {
         valid = false
         errors.push({ message: 'is required' })
@@ -478,23 +470,6 @@ class Validator {
     `
 
     return block
-    //let {schema:{required}} = this
-    //let block = `
-    //  // required
-    //`
-    //if (Array.isArray(required)) {
-    //  required.forEach(key => {
-    //    block += `
-    //    // ${key} is required
-    //    if (value === undefined) {
-    //      valid = false
-    //      errors.push({ message: '"${key}" is required' })
-    //    }
-    //    `
-    //  })
-    //}
-
-    //return block
   }
 
   /**

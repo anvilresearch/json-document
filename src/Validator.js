@@ -830,16 +830,32 @@ class Validator {
    */
   multipleOf () {
     let {schema:{multipleOf}} = this
+    let block = ``
 
-    return `
-        if (value % ${multipleOf} !== 0) {
+    if (typeof multipleOf === 'number') {
+      let length = multipleOf.toString().length
+      let decimals = length - multipleOf.toFixed(0).length - 1
+      let pow = decimals > 0 ? Math.pow(10, decimals) : 1
+      let condition
+
+      if (decimals > 0) {
+        condition = `(value * ${pow}) % ${multipleOf * pow} !== 0`
+      } else {
+        condition = `value % ${multipleOf} !== 0`
+      }
+
+      block += `
+        if (${condition}) {
           valid = false
           errors.push({
             keyword: 'multipleOf',
             message: 'must be a multiple of ${multipleOf}'
           })
         }
-    `
+      `
+    }
+
+    return block
   }
 }
 

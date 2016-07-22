@@ -120,6 +120,10 @@ class Validator {
         value = parent[${index}]
       `
 
+    } else if (address.match(/^pattern\:/)) {
+      block += `
+        value = parent[key]
+      `
     // ...
     } else {
       let chain = address && address.replace('[', '.').replace(']', '').split('.')
@@ -464,17 +468,30 @@ class Validator {
    * patternProperties
    */
   patternProperties () {
-    let {schema} = this
+    let {schema,address} = this
     let {patternProperties} = schema
+    let validations = ``
     let block = ``
 
     if (typeof patternProperties === 'object') {
-      Object.keys(patternProperties).forEach(key => {
-        // TODO
-        // how do we make validation code that will apply to matching property names
-        // that are unknown before-hand?
+      Object.keys(patternProperties).forEach(pattern => {
+        let subschema = patternProperties[pattern]
+        let validator = new Validator(subschema, `pattern: ${pattern}`)
+        validations += `
+          if (key.match('${pattern}')) {
+            ${validator.compile()}
+          }
+        `
       })
     }
+
+    block += `
+        parent = value
+        for (let key in parent) {
+          ${validations}
+        }
+        value = parent
+    `
 
     return block
   }

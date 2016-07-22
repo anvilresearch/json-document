@@ -34,12 +34,13 @@ class Validator {
    * @returns {Function}
    */
   static compile (schema) {
-    let validator = new Validator(schema)
+    let validator = new Validator(schema, '')
 
     let body = `
       let value
       let valid = true
       let errors = []
+      let parent
       ${ validator.compile() }
       return { valid, errors }
     `
@@ -101,19 +102,49 @@ class Validator {
    */
   reference () {
     let {address} = this
-    let chain = address && address.split('.')
+    let block = ``
 
-    let block = `
-      // NEXT VALUE
-      value = data `
+    // array index for iterated value
+    if (address.match(/\[\?\]$/)) {
+      block += `
+        value = parent[i]
+      `
 
-    chain && chain.forEach((token, index) => {
-      let reference = `data.${ chain.slice(0, index + 1).join('.') }`
-      block += `&& ${reference}`
-    })
+    // explicit array index
+    } else if (address.match(/\[[0-9]+\]/)) {
+      let index = parseInt(address.match(/[0-9]+/)[0])
+      block += `
+        value = parent[${index}]
+      `
 
-    block += `
-    `
+    // ...
+    } else {
+      let chain = address && address.replace('[', '.').replace(']', '').split('.')
+      let guards = ['data']
+
+      chain && chain.forEach((token, index) => {
+        guards.push(
+          chain.slice(0, index + 1).reduce((result, segment) => {
+
+            // array index in ancestry
+            if (Number.isInteger(parseInt(segment))) {
+              result += `[${segment}]`
+
+            // object property reference in ancestry
+            } else {
+              result += `.${segment}`
+            }
+
+            return result
+          }, 'data')
+        )
+      })
+
+      block += `
+        // NEXT VALUE
+        value = ${guards.join(' && ')}
+      `
+    }
 
     return block
   }
@@ -244,7 +275,7 @@ class Validator {
     if (validations.length > 0) {
       block += `
       // object validations
-      if (typeof value === 'object' && value !== null) {
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       ${validations}
       }
       `
@@ -372,7 +403,7 @@ class Validator {
    * Properties
    */
   properties () {
-    let {schema} = this
+    let {schema,address} = this
     let {properties,required} = schema
     let block = ``
 
@@ -383,7 +414,11 @@ class Validator {
       Object.keys(properties).forEach(key => {
         let subschema = properties[key]
         let isRequired = required.indexOf(key) !== -1
-        let validation = new Validator(subschema, key)
+        // TODO
+        // how should we be calculating these things? should be json pointer?
+        // needs a separate function
+        let pointer = [address, key].filter(segment => !!segment).join('.')
+        let validation = new Validator(subschema, pointer)
         block += validation.compile(isRequired)
       })
     }
@@ -426,25 +461,20 @@ class Validator {
       'data.hasOwnProperty(key)'
     ].concat(knownProperties).join(' && ')
 
-    if (additionalProperties) {
+    if (additionalProperties === false) {
       block += `
       // additionalProperties
       for (let key in data) {
         if (${conditions}) {
-          // we need to reference, check type, and apply other validations
-          // works differently that these others because we don't know in
-          // advance what the keys are to reference
-          value = data[key]
-
-          // how to get type?
-          // is there some way we can create a new compiler for a generalized ref?
-          //
-          // TODO Feels like this needs talking through
+          valid = false
+          errors.push({
+            keyword: 'additionalProperties',
+            message: key + ' is not a defined property'
+          })
         }
       }
       `
     }
-
 
     return block
   }
@@ -533,21 +563,20 @@ class Validator {
       `
     }
 
-    if (typeof additionalItems === 'object' && additionalItems !== null && Array.isArray(items)) {
+    if (
+      typeof additionalItems === 'object' &&
+      additionalItems !== null &&
+      Array.isArray(items)
+    ) {
       let subschema = additionalItems
-      let validator = new Validator(subschema, address)
+      let validator = new Validator(subschema, address + `[?]`) // array reference
 
       block += `
-        let parent = value
         // additional items
-        for (var i = ${items.length}; i < value.length; i++) {
-          ${validation.compile()}
-          // TODO
-          // create a new validation object and recurse
-          // we'll need to modify this.reference() to accommodate arrays
-          // and deal with restoring the referece to parent for subsequent
-          // validations of that property
+        parent = value
 
+        for (var i = ${items.length}; i <= parent.length; i++) {
+          ${validator.compile()}
         }
 
         value = parent
@@ -574,9 +603,42 @@ class Validator {
    *
    */
   items () {
-    // if items is an object
+    let {schema:{items}, address} = this
+    let block = ``
 
-    return ``
+    // if items is an object
+    if (Array.isArray(items)) {
+      items.forEach((item, index) => {
+        let subschema = item
+        let validator = new Validator(subschema, `${address}[${index}]`)
+
+        block += `
+          // item #${index}
+          parent = value
+          ${validator.compile()}
+          value = parent
+        `
+
+      })
+
+    // if items is an array
+    } else if (typeof items === 'object' && items !== null) {
+      let subschema = items
+      let validator = new Validator(subschema, address + `[?]`) // array reference
+
+      block += `
+        // additional items
+        parent = value
+
+        for (var i = 0; i <= parent.length; i++) {
+          ${validator.compile()}
+        }
+
+        value = parent
+      `
+    }
+
+    return block
   }
 
   /**

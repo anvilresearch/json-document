@@ -94,6 +94,9 @@ class Validator {
     block += this.object()
     block += this.string()
 
+    // non-type-specific validation generators
+    block += this.enum()
+
     return block
   }
 
@@ -223,7 +226,7 @@ class Validator {
    */
   array () {
     let keywords = [
-      'additionalItems', 'items', 'minItems', 'maxItems', 'uniqueItems', 'enum'
+      'additionalItems', 'items', 'minItems', 'maxItems', 'uniqueItems'
     ]
     let validations = this.validations(keywords)
     let block = ``
@@ -244,7 +247,7 @@ class Validator {
    * Number
    */
   number () {
-    let keywords = ['minimum', 'maximum', 'multipleOf', 'enum']
+    let keywords = ['minimum', 'maximum', 'multipleOf']
     let validations = this.validations(keywords)
     let block = ``
 
@@ -267,7 +270,7 @@ class Validator {
     let keywords = [
       'maxProperties', 'minProperties', 'additionalProperties',
       'properties', 'patternProperties', 'dependencies', 'schemaDependencies',
-      'propertyDependencies', 'enum'
+      'propertyDependencies'
     ]
     let validations = this.validations(keywords)
     let block = ``
@@ -291,7 +294,7 @@ class Validator {
    * String-specific validation code generation
    */
   string () {
-    let keywords = ['maxLength', 'minLength', 'pattern', 'format', 'enum']
+    let keywords = ['maxLength', 'minLength', 'pattern', 'format']
     let validations = this.validations(keywords)
     let block = ``
 
@@ -342,16 +345,47 @@ class Validator {
    */
   enum () {
     let {schema:{enum: enumerated}} = this
+    let conditions = ['value !== undefined']
     let block = ``
 
     if (enumerated) {
+      enumerated.forEach(value => {
+        switch (typeof value) {
+          case 'boolean':
+            conditions.push(`value !== ${value}`)
+            break
+
+          case 'number':
+            conditions.push(`value !== ${value}`)
+            break
+
+          case 'string':
+            conditions.push(`value !== "${value}"`)
+            break
+
+          case 'object':
+            if (value === null) {
+              conditions.push(`value !== null`)
+            } else {
+              conditions.push(
+                `'${JSON.stringify(value)}' !== JSON.stringify(value)`
+              )
+            }
+            break
+
+          default:
+            throw new Error('Things are not well in the land of foo')
+
+        }
+      })
+
       block += `
       // validate enum
-      if (${JSON.stringify(enumerated)}.indexOf(value) === -1) {
+      if (${conditions.join(' && ')}) {
         valid = false
         errors.push({
           keyword: 'enum',
-          message: value + ' is not an accepted value'
+          message: JSON.stringify(value) + ' is not an enumerated value'
         })
       }
       `

@@ -120,6 +120,11 @@ class Validator {
         value = parent[${index}]
       `
 
+    } else if (address.match(/\[APKey\]$/)) {
+      block += `
+        value = parent[key]
+      `
+
     } else if (address.match(/^pattern\:/)) {
       block += `
         value = parent[key]
@@ -520,7 +525,7 @@ class Validator {
    * Additional Validations
    */
   additionalValidations () {
-    let {schema:{properties,additionalProperties}} = this
+    let {schema:{properties,additionalProperties},address} = this
     let validations = ``
     let block = ``
 
@@ -528,14 +533,14 @@ class Validator {
     let conditions = ['matched !== true']
 
     // ignore defined properties
-    Object.keys(properties).forEach(key => {
+    Object.keys(properties || {}).forEach(key => {
       conditions.push(`key !== '${key}'`)
     })
 
     // validate additional properties
     if (typeof additionalProperties === 'object') {
       let subschema = additionalProperties
-      let validator = new Validator(subschema)
+      let validator = new Validator(subschema, address + '[APKey]')
       block += `
         // validate additional properties
         if (${conditions.join(' && ')}) {

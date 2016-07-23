@@ -96,6 +96,7 @@ class Validator {
 
     // non-type-specific validation generators
     block += this.enum()
+    block += this.allOf()
 
     return block
   }
@@ -414,7 +415,19 @@ class Validator {
    * allOf
    */
   allOf () {
-    return ``
+    let {schema:{allOf},address} = this
+    let block = ``
+
+    if (Array.isArray(allOf)) {
+      allOf.forEach(subschema => {
+        let validator = new Validator(subschema, address)
+        block += `
+        ${validator.compile()}
+        `
+      })
+    }
+
+    return block
   }
 
   /**

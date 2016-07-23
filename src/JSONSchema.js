@@ -37,14 +37,12 @@ class JSONSchema {
     // TODO: optionally parse JSON string?
     Object.assign(this, schema)
 
-    let initializer = new Initializer(schema)
-    initializer.parse()
-
+    // add schema-derived initialize and validate methods
     Object.defineProperties(this, {
       initialize: {
         enumerable: false,
         writeable: false,
-        value: initializer.compile()
+        value: Initializer.compile(schema)
       },
       validate: {
         enumerable: false,

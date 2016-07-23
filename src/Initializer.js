@@ -6,6 +6,15 @@
 class Initializer {
 
   /**
+   * Compile (static)
+   */
+  static compile (schema) {
+    let initializer = new Initializer(schema)
+    initializer.parse()
+    return initializer.compile()
+  }
+
+  /**
    * Constructor
    */
   constructor (schema) {

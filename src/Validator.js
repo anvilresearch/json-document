@@ -40,7 +40,7 @@ class Validator {
       let value
       let valid = true
       let errors = []
-      let parent
+      let parent = data
       ${ validator.compile() }
       return { valid, errors }
     `
@@ -648,7 +648,42 @@ class Validator {
    * Dependencies
    */
   dependencies () {
-    return ``
+    let {schema:{dependencies},address} = this
+    let block = ``
+
+    if (typeof dependencies === 'object') {
+      Object.keys(dependencies).forEach(key => {
+        let dependency = dependencies[key]
+        let conditions = []
+
+        if (Array.isArray(dependency)) {
+          dependency.forEach(item => {
+            conditions.push(`parent['${item}'] === undefined`)
+          })
+
+          block += `
+            if (parent['${key}'] !== undefined && (${conditions.join(' || ')})) {
+              valid = false
+              errors.push({
+                keyword: 'dependencies',
+                message: 'unmet dependencies'
+              })
+            }
+          `
+        } else if (typeof dependency === 'object') {
+          let subschema = dependency
+          let validator = new Validator(subschema, address)
+
+          block += `
+            if (parent['${key}'] !== undefined) {
+              ${validator.compile()}
+            }
+          `
+        }
+      })
+    }
+
+    return block
   }
 
   /**

@@ -465,33 +465,113 @@ class Validator {
   }
 
   /**
-   * patternProperties
+   * Other Properties
+   *
+   * This method is not for a keyword. It wraps validations for
+   * patternProperties and additionalProperties in a single iteration over
+   * an object-type value's properties.
+   *
+   * It should only be invoked once for a given subschema.
    */
-  patternProperties () {
-    let {schema,address} = this
-    let {patternProperties} = schema
-    let validations = ``
+  otherProperties () {
+    return `
+      /**
+       * Validate Other Properties
+       */
+      parent = data // WE NEED TO ALWAYS BACK UP, NOT TO DATA, BUT TO PREV VAL
+                    // SO THIS IS NOT DONE FOR NESTED???
+
+      for (let key in parent) {
+        value = parent[key]
+        matched = false
+
+        ${this.patternValidations()}
+        ${this.additionalValidations()}
+      }
+
+      value = parent
+    `
+  }
+
+  /**
+   * Pattern Validations
+   */
+  patternValidations () {
+    let {schema:{patternProperties}} = this
     let block = ``
 
     if (typeof patternProperties === 'object') {
       Object.keys(patternProperties).forEach(pattern => {
         let subschema = patternProperties[pattern]
         let validator = new Validator(subschema, `pattern: ${pattern}`)
-        validations += `
+        block += `
           if (key.match('${pattern}')) {
+            matched = true
             ${validator.compile()}
           }
         `
       })
     }
 
-    block += `
-        parent = value
-        for (let key in parent) {
-          ${validations}
+    return block
+  }
+
+  /**
+   * Additional Validations
+   */
+  additionalValidations () {
+    let {schema:{properties,additionalProperties}} = this
+    let validations = ``
+    let block = ``
+
+    // catch additional unmatched properties
+    let conditions = ['matched !== true']
+
+    // ignore defined properties
+    Object.keys(properties).forEach(key => {
+      conditions.push(`key !== '${key}'`)
+    })
+
+    // validate additional properties
+    if (typeof additionalProperties === 'object') {
+      let subschema = additionalProperties
+      let validator = new Validator(subschema)
+      block += `
+        // validate additional properties
+        if (${conditions.join(' && ')}) {
+          ${validator.compile()}
         }
-        value = parent
-    `
+      `
+    }
+
+    // error for additional properties
+    if (additionalProperties === false) {
+      block += `
+        // validate non-presence of additional properties
+        if (${conditions.join(' && ')}) {
+          valid = false
+          errors.push({
+            keyword: 'additionalProperties',
+            message: key + ' is not a defined property'
+          })
+        }
+      `
+    }
+
+    return block
+
+  }
+
+  /**
+   * patternProperties
+   */
+  patternProperties () {
+    let block = ``
+
+    if (!this.otherPropertiesCalled) {
+      this.otherPropertiesCalled = true
+      block += this.otherProperties()
+    }
 
     return block
   }
@@ -500,31 +580,11 @@ class Validator {
    * additionalProperties
    */
   additionalProperties () {
-    let {schema} = this
-    let {properties,additionalProperties} = schema
     let block = ``
 
-    let knownProperties = Object.keys(properties).map(key => {
-      return `key !== '${key}'`
-    })
-
-    let conditions = [
-      'data.hasOwnProperty(key)'
-    ].concat(knownProperties).join(' && ')
-
-    if (additionalProperties === false) {
-      block += `
-      // additionalProperties
-      for (let key in data) {
-        if (${conditions}) {
-          valid = false
-          errors.push({
-            keyword: 'additionalProperties',
-            message: key + ' is not a defined property'
-          })
-        }
-      }
-      `
+    if (!this.otherPropertiesCalled) {
+      this.otherPropertiesCalled = true
+      block += this.otherProperties()
     }
 
     return block

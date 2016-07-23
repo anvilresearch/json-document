@@ -49,7 +49,7 @@ run(JSONSchemaFactory, 'draft4', {
  * Run Tests
  */
 function run (factory, draft, validatorResult) {
-  describe.only(draft, () => {
+  describe(draft, () => {
     let tests = suite.testSync(factory, {}, void 0, draft)
 
     tests.forEach(test => {

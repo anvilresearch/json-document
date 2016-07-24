@@ -29,13 +29,12 @@ class Validator {
       let valid = true
       let errors = []
       let parent = data
-      let initialValidity, anyValid, countOfValid
+      let initialValidity, anyValid, notValid, countOfValid
       let initialErrorCount, accumulatedErrorCount
       ${ validator.compile() }
       return { valid, errors }
     `
 
-    console.log(body)
     return new Function('data', body)
   }
 
@@ -88,6 +87,7 @@ class Validator {
     block += this.enum()
     block += this.anyOf()
     block += this.allOf()
+    block += this.not()
     block += this.oneOf()
 
     return block
@@ -151,7 +151,9 @@ class Validator {
       })
 
       block += `
-        // get ${address}
+        /**
+         * Read the value ${address}
+         */
         value = ${guards.join(' && ')}
       `
     }
@@ -563,7 +565,46 @@ class Validator {
    * @returns {string}
    */
   not () {
-    return ``
+    let {schema:{not},address} = this
+    let block = ``
+
+    if (typeof not === 'object' && not !== null && !Array.isArray(not)) {
+      let subschema = not
+      let validator = new Validator(subschema, address)
+
+      block += `
+        /**
+         * NOT
+         */
+        if (value !== undefined) {
+          initialValidity = valid
+          initialErrorCount = errors.length
+          notValid = true
+
+          accumulatedErrorCount = errors.length
+
+          ${validator.compile()}
+
+          if (accumulatedErrorCount === errors.length) {
+            notValid = false
+          }
+
+          if (notValid === true) {
+            valid = initialValidity
+            errors = errors.slice(0, initialErrorCount)
+          } else {
+            valid = false
+            errors = errors.slice(0, initialErrorCount)
+            errors.push({
+              keyword: 'not',
+              message: 'hmm...'
+            })
+          }
+        }
+      `
+    }
+
+    return block
   }
 
   /**

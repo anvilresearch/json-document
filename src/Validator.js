@@ -41,7 +41,8 @@ class Validator {
       let valid = true
       let errors = []
       let parent = data
-      let initialValidity, initialErrorCount, anyValid, accumulatedErrorCount
+      let initialValidity, anyValid, countOfValid
+      let initialErrorCount, accumulatedErrorCount
       ${ validator.compile() }
       return { valid, errors }
     `
@@ -99,6 +100,7 @@ class Validator {
     block += this.enum()
     block += this.anyOf()
     block += this.allOf()
+    block += this.oneOf()
 
     return block
   }
@@ -465,7 +467,45 @@ class Validator {
    * oneOf
    */
   oneOf () {
-    return ``
+    let {schema:{oneOf},address} = this
+    let block = ``
+
+    if (Array.isArray(oneOf)) {
+      block += `
+        /**
+         * Validate One Of
+         */
+        initialValidity = valid
+        initialErrorCount = errors.length
+        countOfValid = 0
+      `
+
+      oneOf.forEach(subschema => {
+        let validator = new Validator(subschema, address)
+        block += `
+        accumulatedErrorCount = errors.length
+        ${validator.compile()}
+        if (accumulatedErrorCount === errors.length) {
+          countOfValid += 1
+        }
+        `
+      })
+
+      block += `
+          if (countOfValid === 1) {
+            valid = initialValidity
+            errors = errors.slice(0, initialErrorCount)
+          } else {
+            valid = false
+            errors.push({
+              keyword: 'oneOf',
+              message: 'what is a reasonable error message for this case?'
+            })
+          }
+      `
+    }
+
+    return block
   }
 
   /**

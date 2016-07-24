@@ -41,6 +41,7 @@ class Validator {
       let valid = true
       let errors = []
       let parent = data
+      let initialValidity, initialErrorCount, anyValid, accumulatedErrorCount
       ${ validator.compile() }
       return { valid, errors }
     `
@@ -96,6 +97,7 @@ class Validator {
 
     // non-type-specific validation generators
     block += this.enum()
+    block += this.anyOf()
     block += this.allOf()
 
     return block
@@ -193,7 +195,7 @@ class Validator {
           keyword: 'type',
           message: 'invalid type'
         })
-        return { valid, errors }
+        //return { valid, errors }
       }
       `
     }
@@ -408,7 +410,36 @@ class Validator {
    * anyOf
    */
   anyOf () {
-    return ``
+    let {schema:{anyOf},address} = this
+    let block = ``
+
+    if (Array.isArray(anyOf)) {
+      block += `
+        initialValidity = valid
+        initialErrorCount = errors.length
+        anyValid = false
+      `
+
+      anyOf.forEach(subschema => {
+        let validator = new Validator(subschema, address)
+        block += `
+        accumulatedErrorCount = errors.length
+        ${validator.compile()}
+        if (accumulatedErrorCount === errors.length) {
+          anyValid = true
+        }
+        `
+      })
+
+      block += `
+          if (anyValid === true) {
+            valid = initialValidity
+            errors = errors.slice(0, initialErrorCount)
+          }
+      `
+    }
+
+    return block
   }
 
   /**

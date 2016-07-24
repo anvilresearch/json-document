@@ -66,15 +66,15 @@ class Validator {
    * Compile
    *
    * @description
-   * The instance compile method is "dumb". It only sequences invocation of more
-   * specific compilation methods. It generates code to
+   * The instance compile method is "dumb". It only sequences invocation of
+   * more specific compilation methods. It generates code to
    *
    *  - reference a value from input
    *  - validate type(s) of input
    *  - validate constraints described by various schema keywords
    *
-   * Conditional logic related to code generation is pushed downsteam to type-
-   * specific methods.
+   * Conditional logic related to code generation is pushed downsteam to
+   * type-specific methods.
    */
   compile (required) {
     let block = ``
@@ -106,7 +106,12 @@ class Validator {
   }
 
   /**
-   * Reference
+   * reference
+   *
+   * @description
+   * Generate code to get a value from instance for validation
+   *
+   * @returns {string}
    */
   reference () {
     let {address} = this
@@ -158,7 +163,7 @@ class Validator {
       })
 
       block += `
-        // NEXT VALUE
+        // get ${address}
         value = ${guards.join(' && ')}
       `
     }
@@ -167,13 +172,17 @@ class Validator {
   }
 
   /**
-   * Type
+   * type
    *
    * @description
-   * Generate code to validate type(s) of input values
+   * > An instance matches successfully if its primitive type is one of the
+   * > types defined by keyword. Recall: "number" includes "integer".
+   * > JSON Schema Validation Section 5.5.2
+   *
+   * @returns {string}
    */
   type () {
-    let {schema:{type}} = this
+    let {schema:{type},address} = this
     let block = ``
 
     if (type) {
@@ -190,14 +199,13 @@ class Validator {
       }).join(' && ')
 
       block += `
-      // type checking
+      // ${address} type checking
       if (value !== undefined && ${conditions}) {
         valid = false
         errors.push({
           keyword: 'type',
           message: 'invalid type'
         })
-        //return { valid, errors }
       }
       `
     }
@@ -208,14 +216,14 @@ class Validator {
   /**
    * Type-specific validations
    *
-   * Type checking is optional in JSON Schema, and a schema can allow multiple
-   * types. Generated code needs to apply type-specific validations only to
-   * appropriate values, and ignore everything else. Type validation itself is
-   * handled separately from other validation keywords.
+   * Type checking is optional in JSON Schema, and a schema can allow
+   * multiple types. Generated code needs to apply type-specific validations
+   * only to appropriate values, and ignore everything else. Type validation
+   * itself is handled separately from other validation keywords.
    *
    * The methods `array`, `number`, `object`, `string` generate type-specific
-   * validation code blocks, wrapped in a conditional such that they will only
-   * be applied to values of that type.
+   * validation code blocks, wrapped in a conditional such that they will
+   * only be applied to values of that type.
    *
    * For example, the `number` method, given the schema
    *
@@ -236,7 +244,10 @@ class Validator {
    */
 
   /**
-   * Array
+   * array
+   *
+   * @description
+   * @returns {string}
    */
   array () {
     let keywords = [
@@ -247,7 +258,9 @@ class Validator {
 
     if (validations.length > 0) {
       block += `
-      // array validations
+      /**
+       * Array validations
+       */
       if (Array.isArray(value)) {
       ${validations}
       }
@@ -258,7 +271,10 @@ class Validator {
   }
 
   /**
-   * Number
+   * number
+   *
+   * @description
+   * @returns {string}
    */
   number () {
     let keywords = ['minimum', 'maximum', 'multipleOf']
@@ -267,7 +283,9 @@ class Validator {
 
     if (validations.length > 0) {
       block += `
-      // number validations
+      /**
+       * Number validations
+       */
       if (typeof value === 'number') {
       ${validations}
       }
@@ -278,7 +296,10 @@ class Validator {
   }
 
   /**
-   * Object
+   * object
+   *
+   * @description
+   * @returns {string}
    */
   object () {
     let keywords = [
@@ -291,7 +312,9 @@ class Validator {
 
     if (validations.length > 0) {
       block += `
-      // object validations
+      /**
+       * Object validations
+       */
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       ${validations}
       }
@@ -302,10 +325,12 @@ class Validator {
   }
 
   /**
-   * String
+   * string
    *
    * @description
    * String-specific validation code generation
+   *
+   * @returns {string}
    */
   string () {
     let keywords = ['maxLength', 'minLength', 'pattern', 'format']
@@ -314,7 +339,9 @@ class Validator {
 
     if (validations.length > 0) {
       block += `
-      // string validations
+      /**
+       * String validations
+       */
       if (typeof value === 'string') {
       ${validations}
       }
@@ -325,7 +352,7 @@ class Validator {
   }
 
   /**
-   * Validations
+   * validations
    *
    * @description
    * Iterate over keywords and invoke code generator methods for each.
@@ -333,7 +360,7 @@ class Validator {
    * such as this.array() and this.string()
    *
    * @param {Array} keywords
-   * @returns string
+   * @returns {string}
    */
   validations (keywords) {
     let {schema} = this
@@ -351,14 +378,17 @@ class Validator {
   }
 
   /**
-   * Generic Validations
-   */
-
-  /**
-   * Enum
+   * enum
+   *
+   * @description
+   * > An instance validates successfully against this keyword if its value
+   * > is equal to one of the elements in this keyword's array value.
+   * > JSON Schema Validation Section 5.5.1
+   *
+   * @returns {string}
    */
   enum () {
-    let {schema:{enum: enumerated}} = this
+    let {schema:{enum: enumerated},address} = this
     let conditions = ['value !== undefined']
     let block = ``
 
@@ -394,7 +424,9 @@ class Validator {
       })
 
       block += `
-      // validate enum
+      /**
+       * Validate "${address}" enum
+       */
       if (${conditions.join(' && ')}) {
         valid = false
         errors.push({
@@ -410,6 +442,14 @@ class Validator {
 
   /**
    * anyOf
+   *
+   * @description
+   * > An instance validates successfully against this keyword if it
+   * > validates successfully against at least one schema defined by this
+   * > keyword's value.
+   * > JSON Schema Validation Section 5.5.4
+   *
+   * @returns {string}
    */
   anyOf () {
     let {schema:{anyOf},address} = this
@@ -446,6 +486,14 @@ class Validator {
 
   /**
    * allOf
+   *
+   * @description
+   * > An instance validates successfully against this keyword if it
+   * > validates successfully against all schemas defined by this keyword's
+   * > value.
+   * > JSON Schema Validation Section 5.5.3
+   *
+   * @returns {string}
    */
   allOf () {
     let {schema:{allOf},address} = this
@@ -465,6 +513,14 @@ class Validator {
 
   /**
    * oneOf
+   *
+   * @description
+   * > An instance validates successfully against this keyword if it
+   * > validates successfully against exactly one schema defined by this
+   * > keyword's value.
+   * > JSON Schema Validation Section 5.5.5
+   *
+   * @returns {string}
    */
   oneOf () {
     let {schema:{oneOf},address} = this
@@ -473,7 +529,7 @@ class Validator {
     if (Array.isArray(oneOf)) {
       block += `
         /**
-         * Validate One Of
+         * Validate ${address} oneOf
          */
         initialValidity = valid
         initialErrorCount = errors.length
@@ -509,25 +565,34 @@ class Validator {
   }
 
   /**
-   * Not
+   * not
+   *
+   * @description
+   * > An instance is valid against this keyword if it fails to validate
+   * > successfully against the schema defined by this keyword.
+   * > JSON Schema Validation Section 5.5.6
+   *
+   * @returns {string}
    */
   not () {
     return ``
   }
 
   /**
-   * Definitions
+   * definitions
+   *
+   * @description
+   * @returns {string}
    */
   definitions () {
     return ``
   }
 
   /**
-   * Object Validations
-   */
-
-  /**
-   * Properties
+   * properties
+   *
+   * @description
+   * @returns {string}
    */
   properties () {
     let {schema,address} = this
@@ -556,11 +621,14 @@ class Validator {
   /**
    * Other Properties
    *
+   * @description
    * This method is not for a keyword. It wraps validations for
    * patternProperties and additionalProperties in a single iteration over
    * an object-type value's properties.
    *
    * It should only be invoked once for a given subschema.
+   *
+   * @returns {string}
    */
   otherProperties () {
     return `
@@ -584,6 +652,9 @@ class Validator {
 
   /**
    * Pattern Validations
+   *
+   * @description
+   * @returns {string}
    */
   patternValidations () {
     let {schema:{patternProperties}} = this
@@ -607,6 +678,9 @@ class Validator {
 
   /**
    * Additional Validations
+   *
+   * @description
+   * @returns {string}
    */
   additionalValidations () {
     let {schema:{properties,additionalProperties},address} = this
@@ -653,6 +727,9 @@ class Validator {
 
   /**
    * patternProperties
+   *
+   * @description
+   * @returns {string}
    */
   patternProperties () {
     let block = ``
@@ -667,6 +744,9 @@ class Validator {
 
   /**
    * additionalProperties
+   *
+   * @description
+   * @returns {string}
    */
   additionalProperties () {
     let block = ``
@@ -681,12 +761,19 @@ class Validator {
 
   /**
    * minProperties
+   *
+   * @description
+   * > An object instance is valid against "minProperties" if its number of
+   * > properties is greater than, or equal to, the value of this keyword.
+   * > JSON Schema Validation Section 5.4.2
+   *
+   * @returns {string}
    */
   minProperties () {
-    let {schema:{minProperties}} = this
+    let {schema:{minProperties},address} = this
 
     return `
-        // min properties
+        // ${address} min properties
         if (Object.keys(value).length < ${minProperties}) {
           valid = false
           errors.push({
@@ -699,12 +786,19 @@ class Validator {
 
   /**
    * maxProperties
+   *
+   * @description
+   * > An object instance is valid against "maxProperties" if its number of
+   * > properties is less than, or equal to, the value of this keyword.
+   * > JSON Schema Validation Section 5.4.1
+   *
+   * @returns {string}
    */
   maxProperties () {
-    let {schema:{maxProperties}} = this
+    let {schema:{maxProperties},address} = this
 
     return `
-        // max properties
+        // ${address} max properties
         if (Object.keys(value).length > ${maxProperties}) {
           valid = false
           errors.push({
@@ -717,6 +811,9 @@ class Validator {
 
   /**
    * Dependencies
+   *
+   * @description
+   * @returns {string}
    */
   dependencies () {
     let {schema:{dependencies},address} = this
@@ -759,13 +856,20 @@ class Validator {
 
   /**
    * Required
+   *
+   * @description
+   * > An object instance is valid against this keyword if its property set
+   * > contains all elements in this keyword's array value.
+   * > JSON Schema Validation Section 5.4.3
+   *
+   * @returns {string}
    */
   required () {
-    let {schema:{properties}} = this
+    let {schema:{properties},address} = this
     let block = ``
 
     block += `
-      // validate presence
+      // validate ${address} presence
       if (value === undefined) {
         valid = false
         errors.push({
@@ -779,7 +883,21 @@ class Validator {
   }
 
   /**
-   * Array Validations
+   * additionalItems
+   *
+   * @description
+   * > Successful validation of an array instance with regards to these two
+   * > keywords is determined as follows: if "items" is not present, or its
+   * > value is an object, validation of the instance always succeeds,
+   * > regardless of the value of "additionalItems"; if the value of
+   * > "additionalItems" is boolean value true or an object, validation of
+   * > the instance always succeeds; if the value of "additionalItems" is
+   * > boolean value false and the value of "items" is an array, the
+   * > instance is valid if its size is less than, or equal to, the size
+   * > of "items".
+   * > JSON Schema Validation Section 5.3.1
+   *
+   * @returns {string}
    */
   additionalItems () {
     let {schema:{items,additionalItems}, address} = this
@@ -824,6 +942,18 @@ class Validator {
   /**
    * Items
    *
+   * @description
+   * > Successful validation of an array instance with regards to these two
+   * > keywords is determined as follows: if "items" is not present, or its
+   * > value is an object, validation of the instance always succeeds,
+   * > regardless of the value of "additionalItems"; if the value of
+   * > "additionalItems" is boolean value true or an object, validation of
+   * > the instance always succeeds; if the value of "additionalItems" is
+   * > boolean value false and the value of "items" is an array, the
+   * > instance is valid if its size is less than, or equal to, the size
+   * > of "items".
+   * > JSON Schema Validation Section 5.3.1
+   *
    * Code to generate
    *
    *     // this outer conditional is generated by this.array()
@@ -836,6 +966,8 @@ class Validator {
    *       value = parent
    *     }
    *
+   *
+   * @returns {string}
    */
   items () {
     let {schema:{items}, address} = this
@@ -878,12 +1010,19 @@ class Validator {
 
   /**
    * minItems
+   *
+   * @description
+   * > An array instance is valid against "minItems" if its size is greater
+   * > than, or equal to, the value of this keyword.
+   * > JSON Schema Validation Section 5.3.3
+   *
+   * @returns {string}
    */
   minItems () {
-    let {schema:{minItems}} = this
+    let {schema:{minItems},address} = this
 
     return `
-        // min items
+        // ${address} min items
         if (value.length < ${minItems}) {
           valid = false
           errors.push({
@@ -896,12 +1035,19 @@ class Validator {
 
   /**
    * maxItems
+   *
+   * @description
+   * > An array instance is valid against "maxItems" if its size is less
+   * > than, or equal to, the value of this keyword.
+   * > JSON Schema Validation Section 5.3.2
+   *
+   * @returns {string}
    */
   maxItems () {
-    let {schema:{maxItems}} = this
+    let {schema:{maxItems},address} = this
 
     return `
-        // max items
+        // ${address} max items
         if (value.length > ${maxItems}) {
           valid = false
           errors.push({
@@ -915,16 +1061,24 @@ class Validator {
   /**
    * uniqueItems
    *
+   * @description
+   * > If this keyword has boolean value false, the instance validates
+   * > successfully. If it has boolean value true, the instance validates
+   * > successfully if all of its elements are unique.
+   * > JSON Schema Validation Section 5.3.4
+   *
    * TODO
    * optimize
+   *
+   * @returns {string}
    */
   uniqueItems () {
-    let {schema:{uniqueItems}} = this
+    let {schema:{uniqueItems},address} = this
     let block = ``
 
     if (uniqueItems === true) {
       block += `
-        // validate unique items
+        // validate ${address} unique items
         let values = value.map(v => JSON.stringify(v)) // TODO: optimize
         let set = new Set(values)
         if (values.length !== set.size) {
@@ -941,17 +1095,22 @@ class Validator {
   }
 
   /**
-   * String Validations
-   */
-
-  /**
    * minLength
+   *
+   * @description
+   * > A string instance is valid against this keyword if its length is
+   * > greater than, or equal to, the value of this keyword. The length of
+   * > a string instance is defined as the number of its characters as
+   * > defined by RFC 4627 [RFC4627].
+   * > JSON Schema Validation Section 5.2.2
+   *
+   * @returns {string}
    */
   minLength () {
-    let {schema:{minLength}} = this
+    let {schema:{minLength},address} = this
 
     return `
-        // validate minLength
+        // ${address} validate minLength
         if (Array.from(value).length < ${minLength}) {
           valid = false
           errors.push({
@@ -964,12 +1123,21 @@ class Validator {
 
   /**
    * maxLength
+   *
+   * @description
+   * > A string instance is valid against this keyword if its length is less
+   * > than, or equal to, the value of this keyword. The length of a string
+   * > instance is defined as the number of its characters as defined by
+   * > RFC 4627 [RFC4627].
+   * > JSON Schema Validation Section 5.2.1
+   *
+   * @returns {string}
    */
   maxLength () {
-    let {schema:{maxLength}} = this
+    let {schema:{maxLength},address} = this
 
     return `
-        // validate maxLength
+        // ${address} validate maxLength
         if (Array.from(value).length > ${maxLength}) {
           valid = false
           errors.push({
@@ -982,13 +1150,20 @@ class Validator {
 
   /**
    * Pattern
+   *
+   * @description
+   * > A string instance is considered valid if the regular expression
+   * > matches the instance successfully.
+   * > JSON Schema Validation Section 5.2.3
+   *
+   * @returns {string}
    */
   pattern () {
-    let {schema:{pattern}} = this
+    let {schema:{pattern},address} = this
 
     if (pattern) {
       return `
-          // validate pattern
+          // ${address} validate pattern
           if (!value.match(new RegExp('${pattern}'))) {
             valid = false
             errors.push({
@@ -1002,13 +1177,25 @@ class Validator {
 
   /**
    * Format
+   *
+   * @description
+   * > Structural validation alone may be insufficient to validate that
+   * > an instance meets all the requirements of an application. The
+   * > "format" keyword is defined to allow interoperable semantic
+   * > validation for a fixed subset of values which are accurately
+   * > described by authoritative resources, be they RFCs or other
+   * > external specifications.
+   * > JSON Schema Validation Section 7.1
+   *
+   * @returns {string}
    */
   format () {
-    let {schema:{format}} = this
+    let {schema:{format},address} = this
     let matcher = FORMATS[format]
 
     if (matcher) {
       return `
+      // ${address} validate format
       if (!value.match(${matcher})) {
         valid = false
         errors.push({
@@ -1021,17 +1208,25 @@ class Validator {
   }
 
   /**
-   * Number|Integer Validations
-   */
-
-  /**
    * Minimum
+   *
+   * @description
+   * > Successful validation depends on the presence and value of
+   * > "exclusiveMinimum": if "exclusiveMinimum" is not present, or has
+   * > boolean value false, then the instance is valid if it is greater
+   * > than, or equal to, the value of "minimum"; if "exclusiveMinimum" is
+   * > present and has boolean value true, the instance is valid if it is
+   * > strictly greater than the value of "minimum".
+   * > JSON Schema Validation Section 5.1.3
+   *
+   * @returns {string}
    */
   minimum () {
-    let {schema:{minimum,exclusiveMinimum}} = this
+    let {schema:{minimum,exclusiveMinimum},address} = this
     let operator = exclusiveMinimum === true ? '<=' : '<'
 
     return `
+        // ${address} validate minimum
         if (value ${operator} ${minimum}) {
           valid = false
           errors.push({
@@ -1044,12 +1239,24 @@ class Validator {
 
   /**
    * Maximum
+   *
+   * @description
+   * > Successful validation depends on the presence and value of
+   * > "exclusiveMaximum": if "exclusiveMaximum" is not present, or has
+   * > boolean value false, then the instance is valid if it is lower than,
+   * > or equal to, the value of "maximum"; if "exclusiveMaximum" has
+   * > boolean value true, the instance is valid if it is strictly lower
+   * > than the value of "maximum".
+   * > JSON Schema Validation Section 5.1.2
+   *
+   * @returns {string}
    */
   maximum () {
-    let {schema:{maximum,exclusiveMaximum}} = this
+    let {schema:{maximum,exclusiveMaximum},address} = this
     let operator = exclusiveMaximum === true ? '>=' : '>'
 
     return `
+        // ${address} validate maximum
         if (value ${operator} ${maximum}) {
           valid = false
           errors.push({
@@ -1062,6 +1269,13 @@ class Validator {
 
   /**
    * multipleOf
+   *
+   * @description
+   * > A numeric instance is valid against "multipleOf" if the result of
+   * > the division of the instance by this keyword's value is an integer.
+   * > JSON Schema Validation Section 5.1.1
+   *
+   * @returns {string}
    */
   multipleOf () {
     let {schema:{multipleOf}} = this

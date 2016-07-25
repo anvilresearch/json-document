@@ -6,19 +6,19 @@
 const JSONPatch = require('./JSONPatch')
 
 /**
- * Model
+ * JSONDocument
  *
  * @class
- * Model is a high level interface that binds together all other features of
+ * JSONDocument is a high level interface that binds together all other features of
  * this package and provides the principle method of data modeling.
  */
-class Model {
+class JSONDocument {
 
   /**
    * Schema
    */
   static get schema () {
-    throw new Error('Schema must be defined by classes extending Model')
+    throw new Error('Schema must be defined by classes extending JSONDocument')
   }
 
   /**
@@ -85,7 +85,7 @@ class Model {
    *   '/foo/0': '/bar/baz'
    * })
    *
-   * class FooTracker extends Model {
+   * class FooTracker extends JSONDocument {
    *   static get schema () { return schema }
    * }
    *
@@ -129,4 +129,4 @@ class Model {
 /**
  * Export
  */
-module.exports = Model
+module.exports = JSONDocument

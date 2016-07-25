@@ -19,13 +19,13 @@ let expect = chai.expect
 /**
  * Code under test
  */
-const Model = require(path.join(cwd, 'src', 'Model'))
+const JSONDocument = require(path.join(cwd, 'src', 'JSONDocument'))
 const JSONSchema = require(path.join(cwd, 'src', 'JSONSchema'))
 
 /**
  * Tests
  */
-describe('Model', () => {
+describe('JSONDocument', () => {
 
   describe('constructor', () => {
     let schema, instance
@@ -38,13 +38,13 @@ describe('Model', () => {
         }
       })
 
-      class MyModel extends Model {
+      class MyDoc extends JSONDocument {
         static get schema () {
           return schema
         }
       }
 
-      instance = new MyModel()
+      instance = new MyDoc()
     })
 
     it('should initialize from the schema', () => {

@@ -3,7 +3,7 @@
 /**
  * Dependencies
  */
-const FORMATS = require('./Formats')
+const formats = require('./Formats')
 
 /**
  * Validator
@@ -408,7 +408,7 @@ class Validator {
             break
 
           default:
-            throw new Error('Things are not well in the land of foo')
+            throw new Error('Things are not well in the land of enum')
 
         }
       })
@@ -1220,7 +1220,7 @@ class Validator {
    */
   format () {
     let {schema:{format},address} = this
-    let matcher = FORMATS[format]
+    let matcher = formats.resolve(format)
 
     if (matcher) {
       return `

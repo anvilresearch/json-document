@@ -7,19 +7,6 @@ const Initializer = require('./Initializer')
 const Validator = require('./Validator')
 
 /**
- * Types
- */
-const TYPES = [
-  'array',
-  'boolean',
-  'integer',
-  'number',
-  'null',
-  'object',
-  'string'
-]
-
-/**
  * JSONSchema
  *
  * @class
@@ -55,11 +42,47 @@ class JSONSchema {
   /**
    * Extend
    *
+   * @description
+   * ...
+   * Dear future,
+   *
+   * This function was meticulously plagiarized from some curious amalgam of
+   * stackoverflow posts whilst dozing off at my keyboard, too deprived of REM-
+   * sleep to recurse unassisted. If it sucks, you have only yourself to blame.
+   *
+   * Goodnight.
+   *
    * @param {Object} schema
    * @returns {JSONSchema}
    */
   extend (schema) {
-    return new JSONSchema(Object.assign({}, this, schema))
+    function isObject (data) {
+      return data &&
+        typeof data === 'object' &&
+        data !== null &&
+        !Array.isArray(data)
+    }
+
+    function extender (target, source) {
+      let result = Object.assign({}, target)
+      if (isObject(target) && isObject(source)) {
+        Object.keys(source).forEach(key => {
+          if (isObject(source[key])) {
+            if (!(key in target)) {
+              Object.assign(result, { [key]: source[key] })
+            } else {
+              result[key] = extender(target[key], source[key])
+            }
+          } else {
+            Object.assign(result, { [key]: source[key] })
+          }
+        })
+      }
+      return result
+    }
+
+    let descriptor = extender(this, schema)
+    return new JSONSchema(descriptor)
   }
 }
 

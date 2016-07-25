@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -w"
+    "test": "mocha -w",
+    "jsdoc": "jsdoc -c jsdoc.json -r"
   },
   "repository": {
     "type": "git",

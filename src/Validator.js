@@ -1,7 +1,8 @@
 'use strict'
 
 /**
- * Dependencies
+ * Module dependencies
+ * @ignore
  */
 const formats = require('./Formats')
 

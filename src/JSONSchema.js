@@ -2,6 +2,7 @@
 
 /**
  * Module dependencies
+ * @ignore
  */
 const Initializer = require('./Initializer')
 const Validator = require('./Validator')

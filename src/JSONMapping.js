@@ -2,6 +2,7 @@
 
 /**
  * Module dependencies
+ * @ignore
  */
 const JSONPointer = require('./JSONPointer')
 

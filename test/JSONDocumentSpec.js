@@ -6,26 +6,23 @@
 const cwd = process.cwd()
 const path = require('path')
 const chai = require('chai')
-const sinon = require('sinon')
-const sinonChai = require('sinon-chai')
 
 /**
  * Assertions
  */
-chai.use(sinonChai)
 chai.should()
 let expect = chai.expect
 
 /**
  * Code under test
  */
-const JSONDocument = require(path.join(cwd, 'src', 'JSONDocument'))
-const JSONSchema = require(path.join(cwd, 'src', 'JSONSchema'))
+const JSONDocument = require('../src/JSONDocument')
+const JSONSchema = require('../src/JSONSchema')
 
 /**
  * Tests
  */
-describe.only('JSONDocument', () => {
+describe('JSONDocument', () => {
 
   /**
    * Schema
@@ -42,23 +39,25 @@ describe.only('JSONDocument', () => {
    * Constructor
    */
   describe('constructor', () => {
-    let doc, Doc, data, options
+    let Doc, doc, data, options
 
-    beforeEach(() => {
-      Doc = class extends JSONDocument {}
-      sinon.stub(Doc.prototype, 'initialize')
+    before(() => {
+      Doc = class extends JSONDocument {
+        static get schema () {
+          return new JSONSchema({
+            type: 'object',
+            properties: {
+              foo: { type: 'string', default: 'bar' }
+            }
+          })
+        }
+      }
 
-      data = {}
-      options = {}
-      doc = new Doc(data, options)
-    })
-
-    afterEach(() => {
-      Doc.prototype.initialize.restore()
+      doc = new Doc()
     })
 
     it('should initialize instance', () => {
-      doc.initialize.should.have.been.calledWith(data, options)
+      doc.foo.should.equal('bar')
     })
   })
 
@@ -66,26 +65,25 @@ describe.only('JSONDocument', () => {
    * Initialize
    */
   describe('initialize', () => {
-    let schema, doc, Doc, data, options
+    let Doc, doc, data, options
 
     before(() => {
-      schema = { initialize: sinon.spy() }
-
       Doc = class extends JSONDocument {
         static get schema () {
-          return schema
+          return new JSONSchema({
+            type: 'object',
+            properties: {
+              foo: { type: 'string', default: 'bar' }
+            }
+          })
         }
       }
 
       doc = new Doc()
-
-      data = {}
-      options = {}
-      doc.initialize(data, options)
     })
 
     it('should initialize instance with schema', () => {
-      schema.initialize.should.have.been.calledWith(data, options)
+      doc.foo.should.equal('bar')
     })
   })
 
@@ -93,37 +91,33 @@ describe.only('JSONDocument', () => {
    * Validate
    */
   describe('validate', () => {
-    let schema, alternate, doc, Doc, data, options
+    let Doc, doc, data, options, alternate
 
-    beforeEach(() => {
-      schema = {
-        initialize: sinon.spy(),
-        validate: sinon.spy()
-      }
-
-      alternate = {
-        initialize: sinon.spy(),
-        validate: sinon.spy()
-      }
-
+    before(() => {
       Doc = class extends JSONDocument {
         static get schema () {
-          return schema
+          return new JSONSchema({
+            type: 'object',
+            properties: {
+              foo: { maxLength: 3 }
+            }
+          })
         }
       }
 
-      doc = new Doc()
+      alternate = new JSONSchema({
+        properties: { foo: { minLength: 9 } }
+      })
+
+      doc = new Doc({ foo: 'invalid' })
     })
 
     it('should validate instance with defined schema', () => {
-      doc.validate()
-      schema.validate.should.have.been.calledWith(doc)
+      doc.validate().errors[0].message.should.equal('too long')
     })
 
     it('should validate instance with schema argument', () => {
-      doc.validate(alternate)
-      schema.validate.should.not.have.been.called
-      alternate.validate.should.have.been.calledWith(doc)
+      doc.validate(alternate).errors[0].message.should.equal('too short')
     })
   })
 

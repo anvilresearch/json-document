@@ -62,6 +62,9 @@ let schema = new JSONSchema({
     foo: { maxLength: 5 }
   }
 })
+
+schema.validate({ foo: 'too long' })
+// => { valid: false, errors: [{...}] }
 ```
 
 Schemas can be extended. This is useful for class inheritance, as we'll see

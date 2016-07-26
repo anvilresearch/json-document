@@ -20,6 +20,14 @@ Alpha code undergoing rigorous testing and refactoring prior to first production
 
 ## Install
 
+From npm registry:
+
+```bash
+$ npm install json-document@beta
+```
+
+From GitHub repository:
+
 ```bash
 $ npm install https://github.com/anvilresearch/json-document.git
 ```

@@ -81,6 +81,9 @@ let extended = schema.extend({
 //      items: { type: 'integer' } }
 ```
 
+All JSON Schema validation keywords are currently supported except for `ref`, 
+`remoteRef`, and `definitions`.
+
 ### JSONMapping
 
 JSON Mappings can read data from one data structure and write to a different 

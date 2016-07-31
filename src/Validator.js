@@ -23,7 +23,7 @@ class Validator {
    * @returns {Function}
    */
   static compile (schema) {
-    let validator = new Validator(schema, '')
+    let validator = new Validator(schema)
 
     let body = `
       let value
@@ -49,9 +49,17 @@ class Validator {
    * @param {Object} schema - object representation of a schema
    * @param {string} address - reference to ancestry of schema param
    */
-  constructor (schema, address) {
+  constructor (schema, options = {}) {
+    // assign schema to this
     this.schema = schema
-    this.address = address
+
+    // assign all options to this
+    Object.assign(this, options)
+
+    // ensure address is defined
+    if (!this.address) {
+      this.address = ''
+    }
   }
 
   /**
@@ -472,7 +480,7 @@ class Validator {
       `
 
       anyOf.forEach(subschema => {
-        let validator = new Validator(subschema, address)
+        let validator = new Validator(subschema, {address})
         block += `
         accumulatedErrorCount = errors.length
         ${validator.compile()}
@@ -510,7 +518,7 @@ class Validator {
 
     if (Array.isArray(allOf)) {
       allOf.forEach(subschema => {
-        let validator = new Validator(subschema, address)
+        let validator = new Validator(subschema, {address})
         block += `
         ${validator.compile()}
         `
@@ -546,7 +554,7 @@ class Validator {
       `
 
       oneOf.forEach(subschema => {
-        let validator = new Validator(subschema, address)
+        let validator = new Validator(subschema, {address})
         block += `
         accumulatedErrorCount = errors.length
         ${validator.compile()}
@@ -589,7 +597,7 @@ class Validator {
 
     if (typeof not === 'object' && not !== null && !Array.isArray(not)) {
       let subschema = not
-      let validator = new Validator(subschema, address)
+      let validator = new Validator(subschema, {address})
 
       block += `
         /**
@@ -653,7 +661,7 @@ class Validator {
         // how should we be calculating these things? should be json pointer?
         // needs a separate function
         let pointer = [address, key].filter(segment => !!segment).join('.')
-        let validation = new Validator(subschema, pointer)
+        let validation = new Validator(subschema, { address: pointer })
         block += validation.compile(isRequired)
       })
     }
@@ -709,7 +717,7 @@ class Validator {
     if (typeof patternProperties === 'object') {
       Object.keys(patternProperties).forEach(pattern => {
         let subschema = patternProperties[pattern]
-        let validator = new Validator(subschema, `pattern: ${pattern}`)
+        let validator = new Validator(subschema, { address: `pattern: ${pattern}` })
         block += `
           if (key.match('${pattern}')) {
             matched = true
@@ -748,7 +756,7 @@ class Validator {
     // validate additional properties
     if (typeof additionalProperties === 'object') {
       let subschema = additionalProperties
-      let validator = new Validator(subschema, address + '[APKey]')
+      let validator = new Validator(subschema, { address: `${address}[APKey]` })
       block += `
         // validate additional properties
         if (${conditions.join(' && ')}) {
@@ -910,7 +918,7 @@ class Validator {
           `
         } else if (typeof dependency === 'object') {
           let subschema = dependency
-          let validator = new Validator(subschema, address)
+          let validator = new Validator(subschema, {address})
 
           block += `
             if (parent['${key}'] !== undefined) {
@@ -992,7 +1000,7 @@ class Validator {
       Array.isArray(items)
     ) {
       let subschema = additionalItems
-      let validator = new Validator(subschema, address + `[?]`) // array reference
+      let validator = new Validator(subschema, { address: `${address}[?]` }) // array reference
 
       block += `
         // additional items
@@ -1047,7 +1055,7 @@ class Validator {
     if (Array.isArray(items)) {
       items.forEach((item, index) => {
         let subschema = item
-        let validator = new Validator(subschema, `${address}[${index}]`)
+        let validator = new Validator(subschema, { address: `${address}[${index}]` })
 
         block += `
           // item #${index}
@@ -1061,7 +1069,7 @@ class Validator {
     // if items is an array
     } else if (typeof items === 'object' && items !== null) {
       let subschema = items
-      let validator = new Validator(subschema, address + `[?]`) // array reference
+      let validator = new Validator(subschema, { address: `${address}[?]` }) // array reference
 
       block += `
         // additional items

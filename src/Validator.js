@@ -30,8 +30,12 @@ class Validator {
       let valid = true
       let errors = []
       let parent = data
-      let initialValidity, anyValid, notValid, countOfValid
-      let initialErrorCount, accumulatedErrorCount
+      let initialValidity
+      let anyValid
+      let notValid
+      let countOfValid
+      let initialErrorCount
+      let accumulatedErrorCount
       ${ validator.compile() }
       return { valid, errors }
     `

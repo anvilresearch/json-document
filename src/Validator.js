@@ -238,6 +238,10 @@ class Validator {
    * array
    *
    * @description
+   * Invoke methods for array-specific keywords and wrap resulting code in
+   * type-checking conditional so that any resulting validations are only
+   * applied to array values.
+   *
    * @returns {string}
    */
   array () {
@@ -265,6 +269,10 @@ class Validator {
    * number
    *
    * @description
+   * Invoke methods for number-specific keywords and wrap resulting code in
+   * type-checking conditional so that any resulting validations are only
+   * applied to number values.
+   *
    * @returns {string}
    */
   number () {
@@ -290,6 +298,10 @@ class Validator {
    * object
    *
    * @description
+   * Invoke methods for object-specific keywords and wrap resulting code in
+   * type-checking conditional so that any resulting validations are only
+   * applied to object values.
+   *
    * @returns {string}
    */
   object () {
@@ -319,7 +331,9 @@ class Validator {
    * string
    *
    * @description
-   * String-specific validation code generation
+   * Invoke methods for string-specific keywords and wrap resulting code in
+   * type-checking conditional so that any resulting validations are only
+   * applied to string values.
    *
    * @returns {string}
    */
@@ -346,9 +360,9 @@ class Validator {
    * validations
    *
    * @description
-   * Iterate over keywords and invoke code generator methods for each.
-   * Concatenate the results together and return. Used by "type" methods
-   * such as this.array() and this.string()
+   * Iterate over an array of keywords and invoke code generator methods
+   * for each. Concatenate the results together and return. Used by "type"
+   * methods such as this.array() and this.string()
    *
    * @param {Array} keywords
    * @returns {string}
@@ -609,19 +623,14 @@ class Validator {
   }
 
   /**
-   * definitions
-   *
-   * @description
-   * @returns {string}
-   */
-  definitions () {
-    return ``
-  }
-
-  /**
    * properties
    *
    * @description
+   * Iterate over the `properties` schema property if it is an object. For each
+   * key, initialize a new Validator for the subschema represented by the property
+   * value and invoke compile. Append the result of compiling each subschema to
+   * the block of code being generated.
+   *
    * @returns {string}
    */
   properties () {
@@ -684,6 +693,9 @@ class Validator {
    * Pattern Validations
    *
    * @description
+   * Generate validation code from a subschema for properties matching a
+   * regular expression.
+   *
    * @returns {string}
    */
   patternValidations () {
@@ -710,6 +722,10 @@ class Validator {
    * Additional Validations
    *
    * @description
+   * Generate validation code, either from a subschema for properties not
+   * defined in the schema, or to disallow properties not defined in the
+   * schema.
+   *
    * @returns {string}
    */
   additionalValidations () {
@@ -759,6 +775,10 @@ class Validator {
    * patternProperties
    *
    * @description
+   * Generate validation code for properties matching a pattern
+   * defined by the property name (key), which must be a string
+   * representing a valid regular expression.
+   *
    * @returns {string}
    */
   patternProperties () {
@@ -776,6 +796,10 @@ class Validator {
    * additionalProperties
    *
    * @description
+   * Generate validation code for additional properties not defined
+   * in the schema, or disallow additional properties if the value of
+   * `additionalProperties` in the schema is `false`.
+   *
    * @returns {string}
    */
   additionalProperties () {
@@ -843,6 +867,18 @@ class Validator {
    * Dependencies
    *
    * @description
+   * > For all (name, schema) pair of schema dependencies, if the instance has
+   * > a property by this name, then it must also validate successfully against
+   * > the schema.
+   * >
+   * > Note that this is the instance itself which must validate successfully,
+   * > not the value associated with the property name.
+   * >
+   * > For each (name, propertyset) pair of property dependencies, if the
+   * > instance has a property by this name, then it must also have properties
+   * > with the same names as propertyset.
+   * > JSON Schema Validation Section 5.4.5.2
+   *
    * @returns {string}
    */
   dependencies () {

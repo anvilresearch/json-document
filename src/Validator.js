@@ -47,7 +47,7 @@ class Validator {
    * Constructor
    *
    * @param {Object} schema - object representation of a schema
-   * @param {string} address - reference to ancestry of schema param
+   * @param {string} options - compilation options
    */
   constructor (schema, options = {}) {
     // assign schema to this
@@ -59,6 +59,11 @@ class Validator {
     // ensure address is defined
     if (!this.address) {
       this.address = ''
+    }
+
+    // ensure require is boolean
+    if (!this.require === true) {
+      this.require = false
     }
   }
 
@@ -76,12 +81,12 @@ class Validator {
    * Conditional logic related to code generation is pushed downsteam to
    * type-specific methods.
    */
-  compile (required) {
+  compile () {
     let block = ``
 
     block += this.reference()
 
-    if (required) {
+    if (this.require) {
       block += this.required()
     }
 
@@ -661,8 +666,8 @@ class Validator {
         // how should we be calculating these things? should be json pointer?
         // needs a separate function
         let pointer = [address, key].filter(segment => !!segment).join('.')
-        let validation = new Validator(subschema, { address: pointer })
-        block += validation.compile(isRequired)
+        let validation = new Validator(subschema, { address: pointer, require: isRequired })
+        block += validation.compile()
       })
     }
 

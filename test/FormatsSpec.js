@@ -62,6 +62,19 @@ describe('Formats', () => {
     })
   })
 
+  describe.only('test', () => {
+    it('should validate a value with a known known pattern', () => {
+      formats.test('uri', '/').should.equal(true)
+      formats.test('uri', '&').should.equal(false)
+    })
+
+    it('should throw an error with unknown pattern', () => {
+      expect(() => {
+        formats.test('unknown', 'value')
+      }).to.throw('Unknown JSON Schema format.')
+    })
+  })
+
   describe('date-time', () => {})
   describe('uri', () => {})
   describe('email', () => {})

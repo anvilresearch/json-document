@@ -86,6 +86,21 @@ class Formats extends Map {
 
     return format
   }
+
+  /**
+   * Test
+   *
+   * @description
+   * Test that a value conforms to a format.
+   *
+   * @param {string} name
+   * @param {string} value
+   * @returns {Boolean}
+   */
+  test (name, value) {
+    let format = this.resolve(name)
+    return format.test(value)
+  }
 }
 
 /**

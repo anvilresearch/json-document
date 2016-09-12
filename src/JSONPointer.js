@@ -22,7 +22,9 @@ class JSONPointer {
   constructor (expr, mode) {
     this.expr = expr
     this.mode = mode || THROW
-    this.tokens = this.parseJSONString(expr)
+    this.tokens = (expr && expr.charAt(0) === '#')
+      ? this.parseURIFragmentIdentifier(expr)
+      : this.parseJSONString(expr)
   }
 
   /**

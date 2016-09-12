@@ -62,7 +62,7 @@ describe('Formats', () => {
     })
   })
 
-  describe.only('test', () => {
+  describe('test', () => {
     it('should validate a value with a known known pattern', () => {
       formats.test('uri', '/').should.equal(true)
       formats.test('uri', '&').should.equal(false)

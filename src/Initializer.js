@@ -29,7 +29,7 @@ class Initializer {
     let operations = this.operations = new Map()
 
     function parser(schema, chain) {
-      let properties = schema.properties
+      let properties = schema.properties || {}
 
       Object.keys(properties).forEach(key => {
         let refchain = chain.concat([key])

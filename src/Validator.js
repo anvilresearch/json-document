@@ -1056,7 +1056,7 @@ class Validator {
     let {schema:{items}, address} = this
     let block = ``
 
-    // if items is an object
+    // if items is an array
     if (Array.isArray(items)) {
       items.forEach((item, index) => {
         let subschema = item
@@ -1071,7 +1071,7 @@ class Validator {
 
       })
 
-    // if items is an array
+    // if items is an object
     } else if (typeof items === 'object' && items !== null) {
       let subschema = items
       let validator = new Validator(subschema, { address: `${address}[?]` }) // array reference

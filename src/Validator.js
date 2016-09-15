@@ -26,18 +26,32 @@ class Validator {
     let validator = new Validator(schema)
 
     let body = `
-      let value
+      // "cursor"
+      let value = data
+      let container
+      let stack = []
+      let top = -1
+
+      // error state
       let valid = true
       let errors = []
-      let parent = data
+
+      // complex schema state
       let initialValidity
       let anyValid
       let notValid
       let countOfValid
       let initialErrorCount
       let accumulatedErrorCount
+
+      // validation code
       ${ validator.compile() }
-      return { valid, errors }
+
+      // validation result
+      return {
+        valid,
+        errors
+      }
     `
 
     return new Function('data', body)
@@ -62,7 +76,7 @@ class Validator {
     }
 
     // ensure require is boolean
-    if (!this.require === true) {
+    if (this.require !== true) {
       this.require = false
     }
   }
@@ -74,7 +88,7 @@ class Validator {
    * The instance compile method is "dumb". It only sequences invocation of
    * more specific compilation methods. It generates code to
    *
-   *  - reference a value from input
+   *  - read a value from input
    *  - validate type(s) of input
    *  - validate constraints described by various schema keywords
    *
@@ -83,8 +97,6 @@ class Validator {
    */
   compile () {
     let block = ``
-
-    block += this.reference()
 
     if (this.require) {
       block += this.required()
@@ -112,71 +124,28 @@ class Validator {
   }
 
   /**
-   * reference
-   *
-   * @description
-   * Generate code to get a value from instance for validation
-   *
-   * @returns {string}
+   * push
    */
-  reference () {
-    let {address} = this
-    let block = ``
+  push () {
+    return `
+      stack.push(value)
+      container = value
+      top++
+    `
+  }
 
-    // array index for iterated value
-    if (address.match(/\[\?\]$/)) {
-      block += `
-        value = parent[i]
-      `
+  /**
+   * pop
+   */
+  pop () {
+    return `
+      if (stack.length > 1) {
+        top--
+        stack.pop()
+      }
 
-    // explicit array index
-    } else if (address.match(/\[[0-9]+\]/)) {
-      let index = parseInt(address.match(/[0-9]+/)[0])
-      block += `
-        value = parent[${index}]
-      `
-
-    } else if (address.match(/\[APKey\]$/)) {
-      block += `
-        value = parent[key]
-      `
-
-    } else if (address.match(/^pattern\:/)) {
-      block += `
-        value = parent[key]
-      `
-    // ...
-    } else {
-      let chain = address && address.replace('[', '.').replace(']', '').split('.')
-      let guards = ['data']
-
-      chain && chain.forEach((token, index) => {
-        guards.push(
-          chain.slice(0, index + 1).reduce((result, segment) => {
-
-            // array index in ancestry
-            if (Number.isInteger(parseInt(segment))) {
-              result += `[${segment}]`
-
-            // object property reference in ancestry
-            } else {
-              result += `.${segment}`
-            }
-
-            return result
-          }, 'data')
-        )
-      })
-
-      block += `
-        /**
-         * Read the value ${address}
-         */
-        value = ${guards.join(' && ')}
-      `
-    }
-
-    return block
+      value = container = stack[top]
+    `
   }
 
   /**
@@ -263,7 +232,11 @@ class Validator {
    */
   array () {
     let keywords = [
-      'additionalItems', 'items', 'minItems', 'maxItems', 'uniqueItems'
+      'additionalItems',
+      'items',
+      'minItems',
+      'maxItems',
+      'uniqueItems'
     ]
     let validations = this.validations(keywords)
     let block = ``
@@ -323,8 +296,13 @@ class Validator {
    */
   object () {
     let keywords = [
-      'maxProperties', 'minProperties', 'additionalProperties',
-      'properties', 'patternProperties', 'dependencies', 'schemaDependencies',
+      'maxProperties',
+      'minProperties',
+      'additionalProperties',
+      'properties',
+      'patternProperties',
+      'dependencies',
+      'schemaDependencies',
       'propertyDependencies'
     ]
     let validations = this.validations(keywords)
@@ -653,7 +631,7 @@ class Validator {
   properties () {
     let {schema,address} = this
     let {properties,required} = schema
-    let block = ``
+    let block = this.push()
 
     // ensure the value of "required" schema property is an array
     required = (Array.isArray(required) ? required : [])
@@ -667,9 +645,17 @@ class Validator {
         // needs a separate function
         let pointer = [address, key].filter(segment => !!segment).join('.')
         let validation = new Validator(subschema, { address: pointer, require: isRequired })
+
+        // read the value
+        block += `
+        value = container['${key}']
+        `
+
         block += validation.compile()
       })
     }
+
+    block += this.pop()
 
     return block
   }
@@ -691,18 +677,17 @@ class Validator {
       /**
        * Validate Other Properties
        */
-      parent = data // WE NEED TO ALWAYS BACK UP, NOT TO DATA, BUT TO PREV VAL
-                    // SO THIS IS NOT DONE FOR NESTED???
+      ${this.push()}
 
-      for (let key in parent) {
-        value = parent[key]
+      for (let key in container) {
+        value = container[key]
         matched = false
 
         ${this.patternValidations()}
         ${this.additionalValidations()}
       }
 
-      value = parent
+      ${this.pop()}
     `
   }
 
@@ -722,7 +707,7 @@ class Validator {
     if (typeof patternProperties === 'object') {
       Object.keys(patternProperties).forEach(pattern => {
         let subschema = patternProperties[pattern]
-        let validator = new Validator(subschema, { address: `pattern: ${pattern}` })
+        let validator = new Validator(subschema)
         block += `
           if (key.match('${pattern}')) {
             matched = true
@@ -900,7 +885,8 @@ class Validator {
    */
   dependencies () {
     let {schema:{dependencies},address} = this
-    let block = ``
+
+    let block = this.push()
 
     if (typeof dependencies === 'object') {
       Object.keys(dependencies).forEach(key => {
@@ -909,11 +895,11 @@ class Validator {
 
         if (Array.isArray(dependency)) {
           dependency.forEach(item => {
-            conditions.push(`parent['${item}'] === undefined`)
+            conditions.push(`container['${item}'] === undefined`)
           })
 
           block += `
-            if (parent['${key}'] !== undefined && (${conditions.join(' || ')})) {
+            if (container['${key}'] !== undefined && (${conditions.join(' || ')})) {
               valid = false
               errors.push({
                 keyword: 'dependencies',
@@ -926,13 +912,15 @@ class Validator {
           let validator = new Validator(subschema, {address})
 
           block += `
-            if (parent['${key}'] !== undefined) {
+            if (container['${key}'] !== undefined) {
               ${validator.compile()}
             }
           `
         }
       })
     }
+
+    block += this.pop()
 
     return block
   }
@@ -1005,17 +993,18 @@ class Validator {
       Array.isArray(items)
     ) {
       let subschema = additionalItems
-      let validator = new Validator(subschema, { address: `${address}[?]` }) // array reference
+      let validator = new Validator(subschema)
 
       block += `
         // additional items
-        parent = value
+        ${this.push()}
 
-        for (var i = ${items.length}; i <= parent.length; i++) {
+        for (var i = ${items.length}; i <= container.length; i++) {
+          value = container[i]
           ${validator.compile()}
         }
 
-        value = parent
+        ${this.pop()}
       `
     }
 
@@ -1058,33 +1047,38 @@ class Validator {
 
     // if items is an array
     if (Array.isArray(items)) {
+      block += this.push()
+
       items.forEach((item, index) => {
         let subschema = item
         let validator = new Validator(subschema, { address: `${address}[${index}]` })
 
         block += `
           // item #${index}
-          parent = value
+          value = container[${index}]
           ${validator.compile()}
-          value = parent
         `
 
       })
 
+      block += this.pop()
+
     // if items is an object
     } else if (typeof items === 'object' && items !== null) {
       let subschema = items
-      let validator = new Validator(subschema, { address: `${address}[?]` }) // array reference
+      let validator = new Validator(subschema)
 
       block += `
-        // additional items
-        parent = value
+        // items
+        ${this.push()}
 
-        for (var i = 0; i <= parent.length; i++) {
+        for (var i = 0; i < container.length; i++) {
+          // read array element
+          value = container[i]
           ${validator.compile()}
         }
 
-        value = parent
+        ${this.pop()}
       `
     }
 
@@ -1391,4 +1385,7 @@ class Validator {
   }
 }
 
+/**
+ * Export
+ */
 module.exports = Validator

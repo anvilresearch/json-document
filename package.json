@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "description": "",
   "main": "lib/index",
+  "files": [
+    "src",
+    "lib"
+  ],
   "scripts": {
     "build": "babel src -d lib",
     "postinstall": "npm run build",

@@ -46,7 +46,7 @@ describe('Formats', () => {
 
     it('should add the pattern to the map', () => {
       formats.register('ends-with-foo', /foo$/)
-      formats.get('ends-with-foo').should.be.instanceof(RegExp)
+      formats['ends-with-foo'].should.be.instanceof(RegExp)
     })
   })
 

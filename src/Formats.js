@@ -17,7 +17,7 @@ const HOSTNAME_REGEXP = /^[a-z](?:(?:[-0-9a-z]{0,61})?[0-9a-z])?(\.[a-z](?:(?:[-
 /**
  * Formats
  */
-class Formats extends Map {
+class Formats {
 
   /**
    * Initialize
@@ -64,7 +64,7 @@ class Formats extends Map {
       pattern = new RegExp(pattern)
     }
 
-    return this.set(name, pattern)
+    return this[name] = pattern
   }
 
   /**
@@ -78,7 +78,7 @@ class Formats extends Map {
    * @returns {RegExp}
    */
   resolve (name) {
-    let format = this.get(name)
+    let format = this[name]
 
     if (!format) {
       throw new Error('Unknown JSON Schema format.')

@@ -13,7 +13,7 @@
     "build": "npm run clean && npm run babel",
     "clean": "rm -rf dist/*",
     "webpack": "webpack --progress --colors --optimize-minimize --optimize-occurrence-order --optimize-dedupe",
-    "dist": "npm run build && ",
+    "dist": "npm run build && npm run webpack",
     "postinstall": "npm run build",
     "prepublish": "npm test && npm run build && npm run webpack",
     "test": "mocha",

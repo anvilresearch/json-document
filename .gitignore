@@ -2,3 +2,4 @@ node_modules
 docs
 # Compiled lib directory
 lib
+dist

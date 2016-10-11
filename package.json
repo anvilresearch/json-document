@@ -12,9 +12,10 @@
     "babel": "babel src -d lib",
     "build": "npm run clean && npm run babel",
     "clean": "rm -rf dist/*",
-    "dist": "npm run build && webpack --progress --colors --optimize-minimize --optimize-occurrence-order --optimize-dedupe",
+    "webpack": "webpack --progress --colors --optimize-minimize --optimize-occurrence-order --optimize-dedupe",
+    "dist": "npm run build && ",
     "postinstall": "npm run build",
-    "prepublish": "npm test && npm run build",
+    "prepublish": "npm test && npm run build && npm run webpack",
     "test": "mocha",
     "karma": "karma start",
     "jsdoc": "jsdoc -c jsdoc.json -r"

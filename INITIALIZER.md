@@ -848,3 +848,173 @@ function (target, source) {
     }
   }
 }
+
+
+
+
+
+### ARRAY CONTAINER
+
+```javascript
+let schema = {
+  type: 'object',
+  properties: {
+    a: {
+      type: 'object',
+      properties: {
+        b: { type: 'number' },
+        c: {
+          type: 'object',
+          properties: {
+            d: {
+              type: 'array',
+              items: {
+                e: { type: 'boolean', default: false },
+                f: { type: 'string' }
+              }
+            },
+            g: {
+              type: 'array',
+              items: [
+                {},
+                {},
+                {}
+              ],
+              additionalItems: {
+                // fuck you
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+let example = {
+  a: {
+    b: 3,
+    c: {
+      d: [
+        { e: true, f: 'foo' },
+        { e: false, f: 'bar' },
+        { e: true, f: 'baz' },
+        { e: false, f: 'qux' },
+      ]
+    }
+  }
+}
+```
+
+
+
+```javascript
+function (target, source) {
+  var source1
+  var target1
+  var count1
+
+  var source2
+  var target2
+  var count2
+
+  if (source.hasOwnProperty('a')) {
+    if (typeof source['a'] === 'object') {
+      if (!target.hasOwnProperty('a') || typeof target['a'] !== 'object') {
+        target1 = {}
+      } else {
+        target1 = target['a']
+      }
+
+      source1 = source['a']
+      count1 = 0
+
+      if (source1.hasOwnProperty('b')) {
+        target1['b'] = source1['b']
+        count1++
+      }
+
+      if (source1.hasOwnProperty('c')) {
+        if (typeof source1['c'] === 'object') {
+          if (!target1.hasOwnProperty('c') || typeof target1['c'] !== 'object') {
+            target2 = {}
+          } else {
+            target2 = target1['c']
+          }
+
+          source2 = source1['c']
+          count2 = 0
+
+          if (source2.hasOwnProperty('d')) {
+            if (Array.isArray(source2['d'])) {
+              if (!target2.hasOwnProperty('d') || !Array.isArray(target2['d']) {
+                target3 = []
+              } else {
+                target3 = target2['d']
+              }
+
+              source3 = source2['d']
+              count3 = 0
+
+              for (i = 0, l = source3.length; i < l; i++) {
+
+                // should check for nulls and arrays here
+                if (typeof source3[i] === 'object') {
+                  if (!target3[i] || typeof target3[i] !== 'object') {
+                    target4 = {}
+                  } else {
+                    target4 = target3[i]
+                  }
+
+                  source4 = source3[i]
+                  count4 = 0
+
+
+                  if (source4.hasOwnProperty('e')) {
+                    target4['e'] = source4['e']
+                    count4++
+                  }
+
+                  if (source4.hasOwnProperty('f')) {
+                    target4['f'] = source4['f']
+                    count4++
+                  }
+
+                  if (count4 > 0) {
+                    target3[i] = target4
+                    count3++
+                  }
+                } else {
+                  target3[i] = source3[i]
+                  count3++
+                }
+              }
+
+              if (count3 > 0) {
+                target2['d'] = target3
+                count2++
+              }
+            }
+          }
+
+          if (count2 > 0) {
+            target1['c'] = target2
+            count1++
+          }
+
+        } else {
+          target1['c'] = source1['c']
+          count1++
+        }
+      }
+
+      if (count1 > 0) {
+        target['a'] = target1
+      }
+
+    } else {
+      target['a'] = source['a']
+    }
+  }
+}
+```

@@ -873,17 +873,6 @@ let schema = {
                 f: { type: 'string' }
               }
             },
-            g: {
-              type: 'array',
-              items: [
-                {},
-                {},
-                {}
-              ],
-              additionalItems: {
-                // fuck you
-              }
-            }
           }
         }
       }
@@ -1018,3 +1007,188 @@ function (target, source) {
   }
 }
 ```
+
+### OMG
+
+
+```
+let schema = {
+  type: 'object',
+  properties: {
+    a: {
+      type: 'object',
+      properties: {
+        b: { type: 'number' },
+        c: {
+          type: 'object',
+          properties: {
+            d: {
+              type: 'array',
+              items: [
+                { type: 'integer', default: 3 },
+                { type: 'object', properties: { e: { default: 'null' } } }
+              ],
+              additionalItems: {
+                properties: {
+                  e: { default: 'w00t' }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+let source = {
+  a: {
+    b: {
+      g: [
+        {},
+        {},
+        {},
+        {}
+      ]
+    }
+  }
+}
+
+let target = {
+  a: {
+    b: {
+      g: [
+        {},
+        {},
+        {},
+        { h: 'w00t' }
+      ]
+    }
+  }
+}
+
+
+function (target, source) {
+  var source1
+  var target1
+  var count1
+
+  var source2
+  var target2
+  var count2
+
+  if (source.hasOwnProperty('a')) {
+    if (typeof source['a'] === 'object') {
+      if (!target.hasOwnProperty('a') || typeof target['a'] !== 'object') {
+        target1 = {}
+      } else {
+        target1 = target['a']
+      }
+
+      source1 = source['a']
+      count1 = 0
+
+      if (source1.hasOwnProperty('b')) {
+        target1['b'] = source1['b']
+        count1++
+      }
+
+      if (source1.hasOwnProperty('c')) {
+        if (typeof source1['c'] === 'object') {
+          if (!target1.hasOwnProperty('c') || typeof target1['c'] !== 'object') {
+            target2 = {}
+          } else {
+            target2 = target1['c']
+          }
+
+          source2 = source1['c']
+          count2 = 0
+
+          if (source2.hasOwnProperty('d')) {
+            if (Array.isArray(source2['d'])) {
+              if (!target2.hasOwnProperty('d') || !Array.isArray(target2['d']) {
+                target3 = []
+              } else {
+                target3 = target2['d']
+              }
+
+              source3 = source2['d']
+              count3 = 0
+
+              if (0 < source3.length) {
+                target3[0] = source3[0]
+              }
+              
+              if (1 < source3.length {
+                if (typeof source3[1] === 'object') {
+                  // WORK IN PROGRESS
+                } else {
+                
+                }
+              }
+              
+              for (i = 3, l = source3.length; i < l; i++) {
+
+                // should check for nulls and arrays here
+                if (typeof source3[i] === 'object') {
+                  if (!target3[i] || typeof target3[i] !== 'object') {
+                    target4 = {}
+                  } else {
+                    target4 = target3[i]
+                  }
+
+                  source4 = source3[i]
+                  count4 = 0
+
+
+                  if (source4.hasOwnProperty('e')) {
+                    target4['e'] = source4['e']
+                    count4++
+                  } else if (options.defaults !== false) {
+                    target4['e'] = 'w00t'
+                    count4++
+                  }
+
+                  if (count4 > 0) {
+                    target3[i] = target4
+                    count3++
+                  }
+                } else {
+                  target3[i] = source3[i]
+                  count3++
+                }
+              }
+
+              if (count3 > 0) {
+                target2['d'] = target3
+                count2++
+              }
+            }
+          }
+
+          if (count2 > 0) {
+            target1['c'] = target2
+            count1++
+          }
+
+        } else {
+          target1['c'] = source1['c']
+          count1++
+        }
+      }
+
+      if (count1 > 0) {
+        target['a'] = target1
+      }
+
+    } else {
+      target['a'] = source['a']
+    }
+  }
+}
+```
+
+
+
+

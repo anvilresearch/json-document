@@ -14,7 +14,6 @@
     "clean": "rm -rf dist/*",
     "webpack": "webpack --progress --colors --optimize-minimize --optimize-occurrence-order --optimize-dedupe",
     "dist": "npm run build && npm run webpack",
-    "postinstall": "npm run build",
     "prepublish": "npm run build && npm run webpack",
     "test": "mocha",
     "karma": "karma start",

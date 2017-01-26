@@ -1120,11 +1120,29 @@ function (target, source) {
                 target3[0] = source3[0]
               }
               
-              if (1 < source3.length {
+              if (1 < source3.length) {
                 if (typeof source3[1] === 'object') {
-                  // WORK IN PROGRESS
+                  if (1 >= target3.length || typeof target3[1] !== 'object') {
+                    target4 = {}
+                  } else {
+                    target4 = target3[1]
+                  }
+                  
+                  source4 = source3[1]
+                  count4 = 0
+                  
+                  if (source4.hasOwnProperty('e')) {
+                    target4['b'] = source4['e']
+                    count4++
+                  }
+                  
+                  if (count4 > 0) {
+                    target3[1] = target4
+                    count3++
+                  }
                 } else {
-                
+                  target3[1] = source3[1]
+                  count3++
                 }
               }
               

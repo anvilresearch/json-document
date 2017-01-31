@@ -1008,10 +1008,9 @@ function (target, source) {
 }
 ```
 
-### OMG
+### Arrays with schemas per index and "additionalItems"
 
-
-```
+```javascript
 let schema = {
   type: 'object',
   properties: {
@@ -1040,7 +1039,6 @@ let schema = {
     }
   }
 }
-
 
 let source = {
   a: {
@@ -1159,7 +1157,6 @@ function (target, source) {
                   source4 = source3[i]
                   count4 = 0
 
-
                   if (source4.hasOwnProperty('e')) {
                     target4['e'] = source4['e']
                     count4++
@@ -1207,6 +1204,87 @@ function (target, source) {
 }
 ```
 
+### Defaults on parent and current nested objects
 
+```javascript
+let schema = {
+  type: 'object',
+  properties: {
+    a: {
+      type: 'object',
+      default: { b: 100 },
+      properties: {
+        b: { type: 'number', default: 20 },
+        c: { type: 'string', default: 'foo' }
+      }
+    }
+  }
+}
 
+function (target, source) {
+  var source0 = source
+  var target0 = target
+  var count0 = 0
 
+  var source1
+  var target1
+  var count1
+
+  if (options.defaults !== false) {
+    target0['a'] = { b: 100 }
+    count0++
+  }
+
+  if (source0.hasOwnProperty('a')) {
+    if (typeof source['a'] === 'object') {
+      if (!target0.hasOwnProperty('a') || typeof target0['a'] !== 'object') {
+        target1 = {}
+      } else {
+        target1 = target0['a']
+      }
+
+      source1 = source0['a']
+      count1 = 0
+
+      // EXISTING
+      // if (source1.hasOwnProperty('b')) {
+      //   target1['b'] = source1['b']
+      //   count1++
+      // } else if (options.defaults != false) {
+      //   target1['b'] = 20
+      //   count1++
+      // }
+
+      // CHANGES HERE
+      //-----------------
+      if (options.defaults !== false) {
+        target1['b'] = 20
+        count1++
+      }
+
+      if (source1.hasOwnProperty('b')) {
+        target1['b'] = source1['b']
+        count1++
+      }
+      
+      //-----------------
+
+      if (options.defaults !== false) {
+        target1['c'] = 'foo'
+        count1++
+      }
+
+      if (source1.hasOwnProperty('c')) {
+        target1['c'] = source1['c']
+        count1++
+      }
+      //-----------------
+
+      if (count1 > 0) {
+        target0['a'] = target1
+        count0++
+      }
+    }
+  }
+}
+```

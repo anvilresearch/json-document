@@ -131,10 +131,10 @@ class Initializer2 {
    * @returns {String}
    */
   assignDefaultValueToTarget () {
-    let { depth, key } = this
+    let { level, key } = this
     let value = JSON.stringify(this.default)
 
-    return `target${ depth }["${ key }"] = ${ value }`
+    return `target${ level }["${ key }"] = ${ value }`
   }
 
   /**
@@ -143,9 +143,9 @@ class Initializer2 {
    * @returns {String}
    */
   assignNestedSource () {
-    let { depth, key } = this
+    let { level, key } = this
 
-    return `source${ depth } = source${ depth - 1 }["${ key }"]`
+    return `source${ level } = source${ level - 1 }["${ key }"]`
   }
 
   /**
@@ -154,9 +154,9 @@ class Initializer2 {
    * @returns {String}
    */
   assignTargetValueFromSource () {
-    let { depth, key } = this
+    let { level, key } = this
 
-    return `target${ depth }["${ key }"] = source${ depth }["${ key }"]`
+    return `target${ level }["${ key }"] = source${ level }["${ key }"]`
   }
 
   /**
@@ -165,12 +165,12 @@ class Initializer2 {
    * @returns {String}
    */
   attachTargetContainer () {
-    let { depth, key } = this
+    let { level, key } = this
 
     return `
-      if (count${ depth } > 0) {
-        target${ depth - 1 }[${ key }] = target${ depth }
-        count${ depth - 1 }++
+      if (count${ level } > 0) {
+        target${ level - 1 }[${ key }] = target${ level }
+        count${ level - 1 }++
       }
     `
   }
@@ -181,13 +181,13 @@ class Initializer2 {
    * @returns {String}
    */
   ensureNestedTargetContainerArrayFromObject () {
-    let { depth, key } = this
+    let { level, key } = this
 
     return `
-      if (!target${ depth - 1 }.hasOwnProperty("${ key }") || !Array.isArray(target${ depth - 1 }[${ key }]) {
-        target${ depth } = []
+      if (!target${ level - 1 }.hasOwnProperty("${ key }") || !Array.isArray(target${ level - 1 }[${ key }]) {
+        target${ level } = []
       } else {
-        target${ depth } = target${ depth - 1 }[${ key }]
+        target${ level } = target${ level - 1 }[${ key }]
       }
     `
   }
@@ -198,13 +198,13 @@ class Initializer2 {
    * @returns {String}
    */
   ensureNestedTargetContainerObjectFromArray () {
-    let { depth, key } = this
+    let { level, key } = this
 
     return `
-      if (${ key } >= target${ depth - 1 }.length || typeof target${ depth - 1 }["${ key }"] !== 'object') {
-        target${ depth } = {}
+      if (${ key } >= target${ level - 1 }.length || typeof target${ level - 1 }["${ key }"] !== 'object') {
+        target${ level } = {}
       } else {
-        target${ depth } = target${ depth - 1 }["${ key }"]
+        target${ level } = target${ level - 1 }["${ key }"]
       }
     `
   }
@@ -215,13 +215,13 @@ class Initializer2 {
    * @returns {String}
    */
   ensureNestedTargetContainerArrayFromArray () {
-    let { depth, key } = this
+    let { level, key } = this
 
     return `
-      if (${ key } >= target${ depth - 1 }.length || !Array.isArray(target${ depth - 1 }[${ key }]) {
-        target${ depth } = []
+      if (${ key } >= target${ level - 1 }.length || !Array.isArray(target${ level - 1 }[${ key }]) {
+        target${ level } = []
       } else {
-        target${ depth } = target${ depth - 1 }[${ key }]
+        target${ level } = target${ level - 1 }[${ key }]
       }
     `
   }
@@ -232,13 +232,13 @@ class Initializer2 {
    * @returns {String}
    */
   ensureNestedTargetContainerObjectFromObject () {
-    let { depth, key } = this
+    let { level, key } = this
 
     return `
-      if (!target${ depth - 1 }.hasOwnProperty("${ key }") || typeof target${ depth - 1 }["${ key }"] !== 'object') {
-        target${ depth } = {}
+      if (!target${ level - 1 }.hasOwnProperty("${ key }") || typeof target${ level - 1 }["${ key }"] !== 'object') {
+        target${ level } = {}
       } else {
-        target${ depth } = target${ depth - 1 }["${ key }"]
+        target${ level } = target${ level - 1 }["${ key }"]
       }
     `
   }

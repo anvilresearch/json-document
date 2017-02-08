@@ -9,51 +9,46 @@
  *
  * OUTPUT GRAMMAR
  *
- *  start := { declaration } container
- *
  *  container :=
- *    member { member }
- *
- *  declaration :=
- *    sourceDeclaration targetDeclaration countDeclaration
+ *    { declaration } member { member }
  *
  *  member :=
- *    [ optionalDefault ] ( sourceHasOwnProperty | sourceHasArrayItem ) [ attachNestedTargetContainer ]
+ *    [ optionalDefault ] sourceTest
  *
- *  sourceHasOwnProperty :=
- *    sourceValueIsObject sourceValueIsNotExpectedType
- *    | assignTargetValueFromSource incrementCounter
+ *  sourceTest :=
+ *    sourceValue | assignTargetPrimativeFromSource incrementCounter
  *
- *  sourceHasArrayItem :=
- *    sourceValueIsArray sourceValueIsNotExpectedType
- *    | assignTargetValueFromSource incrementCounter
- *
- *  sourceValueIsArray :=
- *    ( ensureNestedTargetContainerArrayFromObject | ensureNestedTargetContainerArrayFromArray )
- *    assignNestedSource initializeCounter container
- *
- *  sourceValueIsObject :=
- *    ( ensureNestedTargetContainerObjectFromArray | ensureNestedTargetContainerObjectFromObject )
- *    assignNestedSource initializeCounter container
+ *  sourceValue :=
+ *    ensureNestedTargetContainer assignNestedSource initializeCounter container attachNestedTargetContainer
  *
  *  optionalDefault :=
  *    assignDefaultValueToTarget incrementCounter
  *
  *  attachNestedTargetContainer :=
- *    attachTargetContainer incrementCounter
+ *    attachTargetContainer incrementParentCounter
  *
- *  sourceValueIsNotExpectedType
- *  ensureNestedTargetContainerArrayFromObject
- *  ensureNestedTargetContainerArrayFromArray
- *  ensureNestedTargetContainerObjectFromObject
- *  ensureNestedTargetContainerObjectFromArray
+ *  ensureNestedTargetContainer :=
+ *    ( testTargetParentHasArrayItem | testTargetParentHasOwnProperty ) 
+ *    ( testTargetIsArray | testTargetIsObject )
+ *    ( newArrayContainer | newObjectContainer )
+ *
+ *  These are not up to date
+ *  ------------------------ 
+ *  testTargetParentHasArrayItem
+ *  testTargetParentHasOwnProperty
+ *  testTargetIsArray
+ *  testTargetIsObject
+ *  newArrayContainer
+ *  newObjectContainer
+ *  assignTargetContainerFromSource
+ *  ensureNestedTargetContainer
  *  assignNestedSource
  *  initializeCounter
- *  assignTargetValueFromSourceArray
- *  assignTargetValueFromSource
+ *  assignTargetPrimativeFromSource
  *  incrementCounter
  *  assignDefaultValueToTarget
  *  attachTargetContainer
+ *  declaration
  */
 
 
@@ -62,64 +57,198 @@
 class Initializer2 {
 
   /**
-   * compile
+   * compile (static)
    */
   static compile (schema) {}
-  compile () {}
+
+  /**
+   * compile
+   * 
+   * @returns {String}
+   */
+  compile () {
+    let declarations = `
+      var source0 = source
+      var target0 = target
+      var count0 = 0
+
+    `
+    let body = this.container()
+
+    let { level, depth } = this
+    if (level === 0) {
+      for (i = 0; i < depth - 1; i++) {
+        declarations += this.declaration(i)
+      }
+    }
+
+    return `
+      ${declarations}
+      ${body}
+    `
+  }
 
   /**
    * Composite elements
    */
 
   /**
-   * start
-   */
-  start () {}
-
-  /**
    * container
    */
-  container () {}
+  container () {
+    let { schema, root, level } = this
+    let { properties } = schema
+    let block = ''
+
+    // TODO More here. Doing properties for now
+    // Array, etc. should be in here as well.
+    // Provision for additionalProperties and additionalItems
+    // should happen in the compiler itself.
+    if (properties) {
+      Object.keys(properties).forEach(key => {
+        let subschema = properties[key]
+        let initializer = new Initializer(subschema, { root, level + 1 })
+
+        block += initializer.member()
+      })
+    }
+
+    return block
+  }
 
   /**
    * declaration
    */
-  declaration () {}
+  declaration (level) {
+    return `
+      var source${ level }
+      var target${ level }
+      var count${ level }
+
+    `
+  }
 
   /**
    * member
    */
-  member () {}
+  member () {
+    let block = ''
+
+    if (/* Something here */) {
+      block += this.optionalDefault()
+    }
+
+    block += this.sourceTest()
+
+    return block
+  }
 
   /**
-   * sourceHasOwnProperty
+   * sourceTest
    */
-  sourceHasOwnProperty () {}
+  sourceTest () {
+    let { level, key, parentType, type } = this
+    
+    let presenceTest = parentType === 'object'
+      ? this.testSourceParentHasOwnProperty()
+      : this.testSourceParentHasArrayItem()
+
+    let value
+    if (type === 'object' || type === 'array') {
+      value = this.sourceValue()
+    } else {
+      value = `
+        ${ this.assignTargetPrimativeFromSource() }
+        ${ this.incrementCounter() }
+      `
+    }
+
+    return `
+      if (${ presenceTest }) {
+        ${ value }
+      }
+    `
+  }
 
   /**
-   * sourceHasArrayItem
+   * sourceValue
    */
-  sourceHasArrayItem () {}
+  sourceValue () {
+    let { level, key, parentType } = this
+
+    let typeTest = parentType === 'object'
+      ? this.testSourceIsObject()
+      : this.testSourceIsArray()
+
+    return `
+      if (${ typeTest }) {
+        ${ this.ensureNestedTargetContainer() }
+        ${ this.assignNestedSource() }
+        ${ this.initializeCounter() }
+        ${ /* Recurse here */ }
+        ${ this.attachNestedTargetContainer() }
+      } else {
+        ${ this.assignTargetContainerFromSource() }
+        ${ this.incrementParentCounter() }
+      }
+    `
+  }
 
   /**
-   * sourceValueIsArray
+   * ensureNestedTargetContainer
+   *
+   * @returns {String}
    */
-  sourceValueIsArray () {}
+  ensureNestedTargetContainer () {
+    let { level, key, parentType, type } = this
 
-  /**
-   * sourceValueIsObject
-   */
-  sourceValueIsObject () {}
+    let presenceTest = parent.type === 'object'
+      ? this.testTargetParentHasOwnProperty()
+      : this.testTargetParentHasArrayItem()
+
+    let typeTest, containerType
+    if (type === 'object') {
+      typeTest = this.testTargetIsObject()
+      containerType = this.newObjectContainer()
+    } else {
+      typeTest = this.testTargetIsArray()
+      containerType = this.newArrayContainer()
+    }
+
+    return `
+      if (${ presenceTest } || ${ typeTest }) {
+        ${ containerType }
+      } else {
+        target${ level } = target${ level - 1 }['${ key }']
+      }
+    `
+  }
 
   /**
    * optionalDefault
    */
-  optionalDefault () {}
+  optionalDefault () {
+    return `
+      if (options.defaults !== false) {
+        ${ this.assignDefaultValueToTarget() }
+        ${ this.incrementCounter() }
+      }
+    `
+  }
 
   /**
    * attachNestedTargetContainer
    */
-  attachNestedTargetContainer () {}
+  attachNestedTargetContainer () {
+    let { level, key } = this
+
+    return `
+      if (count${ level } > 0) {
+        ${ this.attachTargetContainer() }
+        ${ this.incrementParentCounter() }
+      }
+    `
+  }
 
   /**
    * Leaf elements
@@ -134,7 +263,7 @@ class Initializer2 {
     let { level, key } = this
     let value = JSON.stringify(this.default)
 
-    return `target${ level }["${ key }"] = ${ value }`
+    return `target${ level }['${ key }'] = ${ value }`
   }
 
   /**
@@ -145,18 +274,29 @@ class Initializer2 {
   assignNestedSource () {
     let { level, key } = this
 
-    return `source${ level } = source${ level - 1 }["${ key }"]`
+    return `source${ level } = source${ level - 1 }['${ key }']`
   }
 
   /**
-   * assignTargetValueFromSource
+   * assignTargetContainerFromSource
+   * 
+   * @returns {String}
+   */
+  assignTargetContainerFromSource () {
+    let { level, key } = this
+
+    return `target${ level - 1 }[${ key }] = source${ level }`
+  }
+
+  /**
+   * assignTargetPrimativeFromSource
    *
    * @returns {String}
    */
-  assignTargetValueFromSource () {
+  assignTargetPrimativeFromSource () {
     let { level, key } = this
 
-    return `target${ level }["${ key }"] = source${ level }["${ key }"]`
+    return `target${ level }['${ key }'] = source${ level }['${ key }']`
   }
 
   /**
@@ -167,100 +307,151 @@ class Initializer2 {
   attachTargetContainer () {
     let { level, key } = this
 
-    return `
-      if (count${ level } > 0) {
-        target${ level - 1 }[${ key }] = target${ level }
-        count${ level - 1 }++
-      }
-    `
-  }
-
-  /**
-   * ensureNestedTargetContainerArrayFromObject
-   *
-   * @returns {String}
-   */
-  ensureNestedTargetContainerArrayFromObject () {
-    let { level, key } = this
-
-    return `
-      if (!target${ level - 1 }.hasOwnProperty("${ key }") || !Array.isArray(target${ level - 1 }[${ key }]) {
-        target${ level } = []
-      } else {
-        target${ level } = target${ level - 1 }[${ key }]
-      }
-    `
-  }
-
-  /**
-   * ensureNestedTargetContainerObjectFromArray
-   *
-   * @returns {String}
-   */
-  ensureNestedTargetContainerObjectFromArray () {
-    let { level, key } = this
-
-    return `
-      if (${ key } >= target${ level - 1 }.length || typeof target${ level - 1 }["${ key }"] !== 'object') {
-        target${ level } = {}
-      } else {
-        target${ level } = target${ level - 1 }["${ key }"]
-      }
-    `
-  }
-
-  /**
-   * ensureNestedTargetContainerArrayFromArray
-   *
-   * @returns {String}
-   */
-  ensureNestedTargetContainerArrayFromArray () {
-    let { level, key } = this
-
-    return `
-      if (${ key } >= target${ level - 1 }.length || !Array.isArray(target${ level - 1 }[${ key }]) {
-        target${ level } = []
-      } else {
-        target${ level } = target${ level - 1 }[${ key }]
-      }
-    `
-  }
-
-  /**
-   * ensureNestedTargetContainerObjectFromObject
-   *
-   * @returns {String}
-   */
-  ensureNestedTargetContainerObjectFromObject () {
-    let { level, key } = this
-
-    return `
-      if (!target${ level - 1 }.hasOwnProperty("${ key }") || typeof target${ level - 1 }["${ key }"] !== 'object') {
-        target${ level } = {}
-      } else {
-        target${ level } = target${ level - 1 }["${ key }"]
-      }
-    `
+    return `target${ level - 1 }[${ key }] = target${ level }`
   }
 
   /**
    * incrementCounter
+   *
+   * @returns {String}
    */
-  incrementCounter () {}
+  incrementCounter () {
+    let { level } = this
+
+    return `count${ level }++`
+  }
+
+  /**
+   * incrementParentCounter
+   *
+   * @returns {String}
+   */
+  incrementParentCounter () {
+    let { level } = this
+
+    return `count${ level - 1 }++`
+  }
 
   /**
    * initializeCounter
+   * 
+   * @returns {String}
    */
-  initializeCounter () {}
+  initializeCounter () {
+    let { level } = this
+
+    return `count${ level } = 0`
+  }
 
   /**
-   * sourceValueIsNotExpectedType
+   * newArrayContainer
+   * 
+   * @returns {String}
    */
-  sourceValueIsNotExpectedType () {}
+  newArrayContainer () {
+    let { level } = this
 
+    return `target${ level } = []`
+  }
 
+  /**
+   * newObjectContainer
+   * 
+   * @returns {String}
+   */
+  newObjectContainer () {
+    let { level } = this
 
+    return `target${ level } = {}`
+  }
 
+  /**
+   * testSourceParentHasArrayItem
+   * 
+   * @returns {String}
+   */
+  testSourceParentHasArrayItem () {
+    let { level, key } = this
+
+    return `${ key } < target${ level - 1 }.length`
+  }
+
+  /**
+   * testSourceParentHasOwnProperty
+   * 
+   * @returns {String}
+   */
+  testSourceParentHasOwnProperty () {
+    let { level, key } = this
+
+    return `source${ level - 1 }.hasOwnProperty('${ key }')`
+  }
+
+  /**
+   * testTargetParentHasArrayItem
+   * 
+   * @returns {String}
+   */
+  testTargetParentHasArrayItem () {
+    let { level, key } = this
+
+    return `${ key } >= target${ level - 1 }.length`
+  }
+
+  /**
+   * testTargetParentHasOwnProperty
+   * 
+   * @returns {String}
+   */
+  testTargetParentHasOwnProperty () {
+    let { level, key } = this
+
+    return `!target${ level - 1 }.hasOwnProperty('${ key }')`
+  }
+
+  /**
+   * testSourceIsArray
+   * 
+   * @returns {String}
+   */
+  testSourceIsArray () {
+    let { level, key } = this
+
+    return `!Array.isArray(source${ level - 1 }[${ key }]`
+  }
+
+  /**
+   * testSourceIsObject
+   * 
+   * @returns {String}
+   */
+  testSourceIsObject () {
+    let { level, key } = this
+
+    return `typeof source${ level - 1 }['${ key }'] !== 'object'`
+  }
+
+  /**
+   * testTargetIsArray
+   * 
+   * @returns {String}
+   */
+  testTargetIsArray () {
+    let { level, key } = this
+
+    return `!Array.isArray(target${ level - 1 }[${ key }]`
+  }
+
+  /**
+   * testTargetIsObject
+   * 
+   * @returns {String}
+   */
+  testTargetIsObject () {
+    let { level, key } = this
+
+    return `typeof target${ level - 1 }['${ key }'] !== 'object'`
+  }
 
 }
 

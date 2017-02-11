@@ -849,7 +849,7 @@ function (target, source) {
   }
 }
 
-
+```
 
 
 
@@ -1116,6 +1116,7 @@ function (target, source) {
 
               if (0 < source3.length) {
                 target3[0] = source3[0]
+                count3++
               }
               
               if (1 < source3.length) {

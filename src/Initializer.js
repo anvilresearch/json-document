@@ -1,289 +1,405 @@
-'use strict'
-
+var beautify = require('js-beautify').js_beautify
 /**
  * Initializer
  */
 class Initializer {
 
   /**
-   * Compile (static)
+   * constructor
    */
-  static compile (schema) {
-    let initializer = new Initializer(schema)
-    initializer.parse()
-    return initializer.compile()
-  }
+  constructor (schema, options) {
+    Object.assign(this, options || {})
+    this.root = this.root || this
 
-  /**
-   * Constructor
-   */
-  constructor (schema) {
+    this.root.depth = this.root.depth || 1
+
+    if (this.level > this.root.depth) {
+      this.root.depth = this.level
+    }
+
+    this.level = this.level || 0
     this.schema = schema
   }
 
   /**
-   * Parse
+   * compile (static)
    */
-  parse () {
-    let schema = this.schema
-    let operations = this.operations = new Map()
+  static compile (schema) {
+    let initializer = new Initializer(schema)
+    let block = initializer.compile()
 
-    function parser(schema, chain) {
-      let properties = schema.properties || {}
-
-      Object.keys(properties).forEach(key => {
-        let refchain = chain.concat([key])
-        let descriptor = properties[key]
-
-        // operation
-        let operation = {
-          key,
-          fn: 'property',
-          ref: refchain.join('.'),
-          chain: refchain,
-        }
-
-        // TODO:
-        // The repetitious nature of these conditionals is becoming absurd.
-        // Consider using Object.assign(operation, descriptor)
-        if (descriptor.private) {
-          operation.private = true
-        }
-
-        if (descriptor.default) {
-          operation.default = descriptor.default
-        }
-
-        if (descriptor.immutable) {
-          operation.immutable = true
-        }
-
-        if (descriptor.set) {
-          operation.setter = descriptor.set
-        }
-
-        if (descriptor.after) {
-          operation.after = descriptor.after
-        }
-
-        // this descriptor is for a property
-        if (!descriptor.properties) {
-
-          // assignment
-          operations.set(refchain, operation)
-
-        // this is a nested schema
-        } else {
-          if (!operations.get(refchain)) {
-            operation.fn = 'ensureContainer'
-            operations.set(refchain, operation)
-          }
-
-          // recurse
-          parser(descriptor, refchain)
-        }
-      })
+    //console.log(beautify(block))
+    try {
+      return new Function('target', 'source', 'options', block)
+    } catch (e) {
+      console.log(e, e.stack)
     }
-
-    parser(schema, [])
   }
 
   /**
-   * Compile
+   * compile
    */
   compile () {
-    let block = 'options = options || {}\n'
+    let { root, depth, level } = this
+    let declarations = ``
+    let body = ``
 
-    this.operations.forEach(operation => {
-      block += this[operation.fn](operation)
-    })
+    // traverse the schema and generate code
+    body += this.default()
+    body += this.properties()
+    //body += this.additionalProperties()
+    body += this.items()
+    //body += this.additionalItems()
 
-    return new Function('target', 'source', 'options', block)
-  }
 
-  /**
-   * Grammar
-   */
+    // value
+    body += this.member()
+    body += this.item()
 
-  /**
-   * Property
-   */
-  property (operation) {
-    if (operation.private) {
-      return this.private(operation)
-    } else {
-      return this.assign(operation)
-    }
-  }
-
-  /**
-   * Private
-   */
-  private (operation) {
-    return `
-    if (options.private) {
-      ${this.assign(operation)}
-    }
-    `
-  }
-
-  /**
-   * Assign
-   */
-  assign (operation) {
-    let assignment
-
-    if (operation.setter) {
-      assignment = this.setterAssign(operation)
-    } else if (operation.immutable) {
-      assignment = this.immutableAssign(operation)
-    } else {
-      assignment = this.simpleAssign(operation)
-    }
-
-    assignment = `
-    if (${this.condition(operation)}) {
-      ${assignment}
-    } ${operation.default ? this.defaults(operation) : ''}
-    `
-
-    if (operation.after) {
-      assignment += this.afterAssign(operation)
-    }
-
-    return assignment
-  }
-
-  /**
-   * Immutable assign
-   */
-  immutableAssign (operation) {
-    let target = 'target'
-    let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
-
-    // add reference to nested property container
-    if (ref) {
-      target = `${target}.${ref}`
-    }
-
-    return `Object.defineProperty(${target}, '${operation.key}', {
-        value: source.${operation.ref},
-        writable: ${!operation.immutable},
-        enumerable: true
-      })`
-  }
-
-  /**
-   * Simple assign
-   */
-  simpleAssign (operation) {
-    return `target.${operation.ref} = source.${operation.ref}`
-  }
-
-  /**
-   * Setter assign
-   */
-  setterAssign (operation) {
-    return `target.${operation.ref} = (${operation.setter.toString()})(source)`
-  }
-
-  /**
-   * After assign
-   * TODO:
-   * These invocations should take place at the end of the
-   * generated function
-   */
-  afterAssign (operation) {
-    return `
-    (${operation.after.toString()}).call(target, source)
-    `
-  }
-
-  /**
-   * Defaults
-   */
-  defaults (operation) {
-    // TODO:
-    // It's not optimal to inline the function definition
-    // because the function gets created each time the
-    // initializer function is run. Rather, we need to be
-    // able to reference functions by symbols/methods available to
-    // the definition scope.
-    if (typeof operation.default === 'function') {
-      operation.defaultString = `(${operation.default.toString()})()`
-    } else {
-      operation.defaultString = JSON.stringify(operation.default)
-    }
-
-    return `else if (options.defaults !== false) {
-      ${operation.immutable ? this.immutableDefault(operation) : this.simpleDefault(operation)}
-    }`
-  }
-
-  /**
-   * Simple default
-   */
-  simpleDefault (operation) {
-    return `target.${operation.ref} = ${operation.defaultString}`
-  }
-
-  /**
-   * Immutable default
-   */
-  immutableDefault (operation) {
-    let target = 'target'
-    let ref = operation.chain.slice(0, operation.chain.length-1).join('.')
-
-    // add reference to nested property container
-    if (ref) {
-      target = `${target}.${ref}`
-    }
-
-    return `Object.defineProperty(${target}, '${operation.key}', {
-        value: ${operation.defaultString},
-        writable: ${!operation.immutable},
-        enumerable: true
-      })`
-  }
-
-  /**
-   * Condition
-   */
-  condition (operation) {
-    let chain = operation.chain
-    let ref = operation.ref
-
-    let guards = chain.reduce((result, key, index) => {
-      if (index > 0) {
-        result.push(`source.${chain.slice(0, index).join('.')}`)
+    // after traversing the schema
+    // generate the variable declarations
+    if (root === this) {
+      for (let i = 1; i <= this.root.depth; i++) {
+        declarations += this.declaration(i)
       }
-      return result
-    }, []).join(' && ')
 
-    let condition = (guards)
-      ? `${guards} && source.${ref} !== undefined`
-      : `source.${ref} !== undefined`
+      return `
+        options = options || {}
 
-    return condition
+        if (options.filter === false) {
+          Object.assign(target, JSON.parse(JSON.stringify(source)))
+        }
+
+        ${ declarations }
+        ${ body }
+      `
+    }
+
+    return body
+
   }
 
   /**
-   * Ensure object reference exists
+   * declaration
    */
-  ensureContainer (operation) {
-    // should this check the source object for
-    // presence of the reference or some default property
-    // before adding this property to the source?
+  declaration (level) {
     return `
-    if (!target.${operation.ref}) {
-      target.${operation.ref} = {}
-    }
+      var target${ level }
+      var source${ level }
+      var count${ level }
     `
   }
+
+  /**
+   * default
+   */
+  default () {
+    let { schema, level, key, index } = this
+    let { default: value } = schema       // rename default to value because it's a keyword and syntax highlighter breaks
+    let block = ``
+
+    if (schema.hasOwnProperty('default')) {
+
+      if (key) {
+        block += `
+          target${ level }['${ key }'] = ${ JSON.stringify(value) }
+        `
+      }
+
+      if (index) {
+        block += `
+          target${ level }[${ index }] = ${ JSON.stringify(value) }
+        `
+      }
+
+      if (level > 1) {
+        block += `
+          count${ level }++
+        `
+      }
+
+      block = `
+        if (options.defaults !== false) {
+          ${ block }
+        }
+      `
+    }
+
+    return block
+  }
+
+
+  /**
+   * member
+   */
+  member () {
+    let { schema, root, level, key } = this
+    let { properties, additionalProperties, items, additionalItems } = schema
+    let block = ``
+
+    // `key` tells us to treat this subschema as an object member vs an array item
+    // and the absence of the other values here indicates we are dealing with a
+    // primitive value
+    if (key && !properties && !additionalProperties && !items && !additionalItems) {
+
+      // first generate the assignment statement
+      block += `
+        target${ level }['${ key }'] = source${ level }['${ key }']
+      `
+
+      // for nested container objects, add the counter incrementing statement
+      if (level > 1) {
+        block += `
+          count${ level }++
+        `
+      }
+
+      // wrap the foregoing in a check for presence on the source
+      block = `
+        if (source${ level }.hasOwnProperty('${ key }')) {
+          ${ block }
+        }
+      `
+    }
+
+    return block
+  }
+
+  /**
+   * item
+   */
+  item () {
+    let { schema, root, level, index } = this
+    let { properties, additionalProperties, items, additionalItems } = schema
+    let block = ``
+
+    if (index && !properties && !additionalProperties && !items && !additionalItems) {
+
+      block += `
+        target${ level }[${ index }] = source${ level }[${ index }]
+      `
+
+      if (level > 1) {
+        block += `
+          count${ level }++
+        `
+      }
+
+      block = `
+        if (${ index } < len) {
+          ${ block }
+        }
+      `
+
+    }
+
+    return block
+  }
+
+  /**
+   * properties
+   */
+  properties () {
+    let { schema, root, level, key, index } = this
+    let { properties } = schema
+    let block = ``
+
+    if (properties) {
+      Object.keys(properties).forEach(key => {
+        let subschema = properties[key]
+        let initializer = new Initializer(subschema, { key, root, level: level + 1 })
+
+        block += initializer.compile()
+      })
+
+      // root-level properties boilerplate
+      if (root === this) {
+        block = `
+          if (typeof source === 'object' && source !== null && !Array.isArray(source)) {
+            if (typeof target !== 'object') {
+              throw new Error('?')
+            }
+
+            source1 = source
+            target1 = target
+            count1 = 0
+
+            ${ block }
+          }
+        `
+
+      // nested properties boilerplate
+      } else {
+
+        if (index) {
+          block = `
+            if (${ index } < source${ level }.length || typeof source${ level }[${ index }] === 'object') {
+
+              source${ level + 1 } = source${ level }[${ index }] || {}
+              count${ level + 1 } = 0
+
+              if (${ index } < target${ level }.length || typeof target${ level }[${ index }] !== 'object') {
+                target${ level + 1 } = {}
+                if (${ index } < source${ level }.length) {
+                  count${ level + 1 }++
+                }
+              } else {
+                target${ level + 1 } = target${ level }[${ index }]
+              }
+
+              ${ block }
+
+              if (count${ level + 1 } > 0) {
+                target${ level }[${ index }] = target${ level + 1 }
+                count${ level }++
+              }
+
+            } else {
+              target${ level }[${ index }] = source${ level }[${ index }]
+              count${ level }++
+            }
+          `
+        }
+
+        if (key) {
+          block = `
+            if (typeof source${ level }['${ key }'] === 'object' || !source${ level }.hasOwnProperty('${ key }')) {
+
+              source${ level + 1 } = source${ level }['${ key }'] || {}
+              count${ level + 1 } = 0
+
+              if (!target${ level }.hasOwnProperty('${ key }')
+                  || typeof target${ level }['${ key }'] !== 'object'
+                  || target${level}['${ key }'] === null
+                  || Array.isArray(target${ level }['${ key }'])) {
+                target${ level + 1 } = {}
+                if (source${ level }.hasOwnProperty('${ key }')) {
+                  count${ level + 1 }++
+                }
+              } else {
+                target${ level + 1 } = target${ level }['${ key }']
+                count${ level + 1 }++
+              }
+
+              ${ block }
+
+              if (count${ level + 1 } > 0) {
+                target${ level }['${ key }'] = target${ level + 1 }
+                count${ level }++
+              }
+
+            } else {
+              target${ level }['${ key }'] = source${ level }['${ key }']
+              count${ level }++
+            }
+          `
+        }
+      }
+    }
+
+    return block
+  }
+
+  /**
+   *
+   */
+  additionalProperties () {}
+
+  /**
+   * items
+   */
+  items () {
+
+    let { schema, root, level, key, index } = this
+    let { items } = schema
+    let block = ``
+
+    if (items) {
+
+      if (Array.isArray(items)) {
+        // TODO
+        //
+        //
+        //
+        //
+        //
+        // ...
+
+      } else if (typeof items === 'object' && items !== null) {
+        let index = `i${ level + 1 }`
+        let initializer = new Initializer(items, { index, root, level: level + 1 })
+
+        block += `
+          var sLen = source${ level + 1 }.length || 0
+          var tLen = target${ level + 1 }.length || 0
+          var len = 0
+
+          if (sLen > len) { len = sLen }
+          if (tLen > len) { len = tLen }
+
+          for (var ${ index } = 0; ${ index } < len; ${ index }++) {
+            ${ initializer.compile() }
+          }
+        `
+      }
+
+      // root-level properties boilerplate
+      if (root === this) {
+        block = `
+          if (Array.isArray(source)) {
+            if (!Array.isArray(target)) {
+              throw new Error('?')
+            }
+
+            source1 = source
+            target1 = target
+
+            ${ block }
+          }
+        `
+
+      // nested properties boilerplate
+      } else {
+        block = `
+          if (Array.isArray(source${ level }['${ key }']) || !source${ level }.hasOwnProperty('${ key }')) {
+
+            source${ level + 1 } = source${ level }['${ key }'] || []
+            count${ level + 1 } = 0
+
+            if (!target${ level }.hasOwnProperty('${ key }') || !Array.isArray(target${ level }['${ key }'])) {
+              target${ level + 1 } = []
+                if (source${ level }.hasOwnProperty('${ key }')) {
+                  count${ level + 1 }++
+                }
+
+            } else {
+              target${ level + 1 } = target${ level }['${ key }']
+              count${ level + 1 }++
+            }
+
+            ${ block }
+
+            if (count${ level + 1 } > 0) {
+              target${ level }['${ key }'] = target${ level + 1 }
+              count${ level }++
+            }
+
+          } else {
+            target${ level }['${ key }'] = source${ level }['${ key }']
+            count${ level }++
+          }
+        `
+      }
+    }
+
+    return block
+  }
+
+  /**
+   *
+   */
+  additionalItems () {}
 
 }
 
-/**
- * Export
- */
 module.exports = Initializer

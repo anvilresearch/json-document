@@ -28,7 +28,7 @@ class Initializer {
     let initializer = new Initializer(schema)
     let block = initializer.compile()
 
-    console.log(beautify(block))
+    //console.log(beautify(block))
     try {
       return new Function('target', 'source', 'options', block)
     } catch (e) {
@@ -64,6 +64,12 @@ class Initializer {
       }
 
       return `
+        options = options || {}
+
+        if (options.filter === false) {
+          Object.assign(target, JSON.parse(JSON.stringify(source)))
+        }
+
         ${ declarations }
         ${ body }
       `
@@ -180,7 +186,7 @@ class Initializer {
       }
 
       block = `
-        if (${ index } > target${ level }.length) {
+        if (${ index } < len) {
           ${ block }
         }
       `
@@ -216,6 +222,7 @@ class Initializer {
 
             source1 = source
             target1 = target
+            count1 = 0
 
             ${ block }
           }
@@ -227,14 +234,18 @@ class Initializer {
         if (index) {
           block = `
             if (${ index } < source${ level }.length || typeof source${ level }[${ index }] === 'object') {
-              if (${ index } < target${ level }.length || typeof target${ level }[${ index }] !== 'object') {
-                target${ level + 1 } = {}
-              } else {
-                target${ level + 1 } = target${ level }[${ index }]
-              }
 
               source${ level + 1 } = source${ level }[${ index }] || {}
               count${ level + 1 } = 0
+
+              if (${ index } < target${ level }.length || typeof target${ level }[${ index }] !== 'object') {
+                target${ level + 1 } = {}
+                if (${ index } < source${ level }.length) {
+                  count${ level + 1 }++
+                }
+              } else {
+                target${ level + 1 } = target${ level }[${ index }]
+              }
 
               ${ block }
 
@@ -253,14 +264,22 @@ class Initializer {
         if (key) {
           block = `
             if (typeof source${ level }['${ key }'] === 'object' || !source${ level }.hasOwnProperty('${ key }')) {
-              if (!target${ level }.hasOwnProperty('${ key }') || typeof target${ level }['${ key }'] !== 'object') {
-                target${ level + 1 } = {}
-              } else {
-                target${ level + 1 } = target${ level }['${ key }']
-              }
 
               source${ level + 1 } = source${ level }['${ key }'] || {}
               count${ level + 1 } = 0
+
+              if (!target${ level }.hasOwnProperty('${ key }')
+                  || typeof target${ level }['${ key }'] !== 'object'
+                  || target${level}['${ key }'] === null
+                  || Array.isArray(target${ level }['${ key }'])) {
+                target${ level + 1 } = {}
+                if (source${ level }.hasOwnProperty('${ key }')) {
+                  count${ level + 1 }++
+                }
+              } else {
+                target${ level + 1 } = target${ level }['${ key }']
+                count${ level + 1 }++
+              }
 
               ${ block }
 
@@ -311,7 +330,14 @@ class Initializer {
         let initializer = new Initializer(items, { index, root, level: level + 1 })
 
         block += `
-          for (var ${ index } = 0; ${ index } < source${ level + 1 }.length; ${ index }++) {
+          var sLen = source${ level + 1 }.length || 0
+          var tLen = target${ level + 1 }.length || 0
+          var len = 0
+
+          if (sLen > len) { len = sLen }
+          if (tLen > len) { len = tLen }
+
+          for (var ${ index } = 0; ${ index } < len; ${ index }++) {
             ${ initializer.compile() }
           }
         `
@@ -337,14 +363,19 @@ class Initializer {
         block = `
           if (Array.isArray(source${ level }['${ key }']) || !source${ level }.hasOwnProperty('${ key }')) {
 
-            if (!target${ level }.hasOwnProperty('${ key }') || !Array.isArray(target${ level }['${ key }'])) {
-              target${ level + 1 } = []
-            } else {
-              target${ level + 1 } = target${ level }['${ key }']
-            }
-
             source${ level + 1 } = source${ level }['${ key }'] || []
             count${ level + 1 } = 0
+
+            if (!target${ level }.hasOwnProperty('${ key }') || !Array.isArray(target${ level }['${ key }'])) {
+              target${ level + 1 } = []
+                if (source${ level }.hasOwnProperty('${ key }')) {
+                  count${ level + 1 }++
+                }
+
+            } else {
+              target${ level + 1 } = target${ level }['${ key }']
+              count${ level + 1 }++
+            }
 
             ${ block }
 

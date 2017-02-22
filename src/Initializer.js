@@ -1,3 +1,5 @@
+'use strict'
+
 var beautify = require('js-beautify').js_beautify
 /**
  * Initializer

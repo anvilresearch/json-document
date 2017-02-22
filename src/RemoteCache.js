@@ -34,22 +34,18 @@ class RemoteCache {
    * @param {uri} uri - URI of the remote schema reference
    */
   resolve (uri) {
-    return new Promise((resolve, reject) => {
+    if (this.cache[uri]) {
+      return resolve(this.cache[uri])
+    }
 
-      if (this.cache[uri]) {
-        return resolve(this.cache[uri])
-      } else {
-        return fetch(uri)
-          .then(res => {
-            return res.json()
-          })
-          .then(json => {
-            return resolve(json)
-          })
-          .catch(reject)
-      }
-
-    })
+    return fetch(uri)
+      .then(res => {
+        return res.json()
+      })
+      .then(json => {
+        this.cache[uri] = json
+        return json
+      })
   }
 
 }

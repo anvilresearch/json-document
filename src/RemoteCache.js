@@ -7,7 +7,7 @@ const fetch = require('node-fetch')
 
 /**
  * Cache
- * 
+ *
  * @class
  * Cache for JSON Schema remote reference resolution.
  */
@@ -35,7 +35,7 @@ class RemoteCache {
    */
   resolve (uri) {
     if (this.cache[uri]) {
-      return resolve(this.cache[uri])
+      return Promise.resolve(this.cache[uri])
     }
 
     return fetch(uri)

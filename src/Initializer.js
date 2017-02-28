@@ -263,7 +263,10 @@ class Initializer {
 
         if (key) {
           block = `
-            if (typeof source${ level }['${ key }'] === 'object' || !source${ level }.hasOwnProperty('${ key }')) {
+            if ((typeof source${ level }['${ key }'] === 'object'
+                  && source${level}['${key}'] !== null
+                  && !Array.isArray(source${level}['${key}']))
+                || !source${ level }.hasOwnProperty('${ key }')) {
 
               source${ level + 1 } = source${ level }['${ key }'] || {}
               count${ level + 1 } = 0

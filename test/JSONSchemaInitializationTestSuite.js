@@ -2340,6 +2340,987 @@ let tests = {
     }
   ],
 
+  /**
+   * Here we're concerned with various cases involving branches in a deeply nested
+   * object.
+   *
+   * NOTE: although these cases deal with the existence of array values on the source
+   * and target at the branch level (non-root, non-leaf), the schemas are for mostly
+   * for deeply nested objects. Deep nesting of arrays within objects within arrays,
+   * etc., will be handled in a separate block of tests.
+   */
+  'deeply nested object branch assignment': [
+    {
+      assertion: 'should not assign values not present on source to target',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: { a: {} },
+      source: { a: {} },
+      result: { a: {} }
+    },
+
+    {
+      assertion: 'should assign object source value to target with no existing value',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {},
+      source: {
+        a: { b: { c: 3 } },
+        d: { e: { g: 'nope' } }
+      },
+      result: {
+        a: { b: { c: 3 } },
+        d: { e: {}}
+      }
+    },
+
+    {
+      assertion: 'should assign array source value to target with no existing value',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {},
+      source: {
+        a: { b: [ 0, 1 ] },
+        d: { e: [] }
+      },
+      result: {
+        a: { b: [ 0, 1 ] },
+        d: { e: [] }
+      }
+    },
+
+    {
+      assertion: 'should assign null source value to target with no existing value',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {},
+      source: {
+        a: { b: null },
+        d: { e: null }
+      },
+      result: {
+        a: { b: null },
+        d: { e: null }
+      }
+    },
+
+    {
+      assertion: 'should assign primitive source value to target with no existing value',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {},
+      source: {
+        a: { b: 1 },
+        d: { e: false }
+      },
+      result: {
+        a: { b: 1 },
+        d: { e: false }
+      }
+    },
+
+    {
+      assertion: 'should leave target object intact when source value is not present',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: { p: 0 } },
+        d: { e: {} }
+      },
+      source: { d: {} },
+      result: {
+        a: { b: { p: 0 } },
+        d: { e: {} }
+      }
+    },
+
+    {
+      assertion: 'should leave target array intact when source value is not present',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: [ 2, 3 ] },
+        d: { e: [] }
+      },
+      source: { a: {} },
+      result: {
+        a: { b: [ 2, 3 ] },
+        d: { e: [] }
+      }
+    },
+
+    {
+      assertion: 'should leave target null intact when source value is not present',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: null },
+        d: { e: null }
+      },
+      source: { a: {} },
+      result: {
+        a: { b: null },
+        d: { e: null }
+      }
+    },
+
+    {
+      assertion: 'should leave target primitive value intact when source value is not present',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: false },
+        d: { e: 1 }
+      },
+      source: {
+        d: { e: 2 }
+      },
+      result: {
+        a: { b: false },
+        d: { e: 2 }
+      }
+    },
+
+    {
+      assertion: 'should modify target object when source value is object',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: { c: true, d: 0 } },
+        f: {}
+      },
+      source: {
+        a: { b: { d: 1, e: 'member' } },
+        f: { g: { i: 'member' } }
+      },
+      result: {
+        a: { b: { c: true, d: 1, e: 'member' } },
+        f: { g: { i: 'member' } }
+      }
+    },
+
+    {
+      assertion: 'should replace target array when source value is object',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: [ 1, 2, 3 ] },
+        f: { g: [] }
+      },
+      source: {
+        a: { b: { c: true, d: 3, e: 'hello' } },
+        f: { g: {} }
+      },
+      result: {
+        a: { b: { c: true, d: 3, e: 'hello' } },
+        f: { g: {} }
+      }
+    },
+
+    {
+      assertion: 'should replace target null when source value is object',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: null },
+        f: { g: null }
+      },
+      source: {
+        a: { b: { c: true, d: 3, e: 'hello' } },
+        f: { g: {} }
+      },
+      result: {
+        a: { b: { c: true, d: 3, e: 'hello' } },
+        f: { g: {} }
+      }
+    },
+
+    {
+      assertion: 'should replace target primitive when source value is object',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: true },
+        f: { g: 3.14 }
+      },
+      source: {
+        a: { b: { c: true, d: 3, e: 'hello' } },
+        f: { g: {} }
+      },
+      result: {
+        a: { b: { c: true, d: 3, e: 'hello' } },
+        f: { g: {} }
+      }
+    },
+
+    {
+      assertion: 'should replace target object when source value is array',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: { c: true, d: 3, e: 'hello' } },
+        f: { g: {} }
+      },
+      source: {
+        a: { b: [] },
+        f: { g: [ 5, 4, 3, 2, 1 ] }
+      },
+      result: {
+        a: { b: [] },
+        f: { g: [ 5, 4, 3, 2, 1 ] }
+      }
+    },
+
+    {
+      assertion: 'should modify target array when source value is array',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                items: {
+                  properties: {
+                    c: { type: 'string' }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: [ { c: 'foo' }, { c: 'bar' }, { c: 'baz' } ] }
+      },
+      source: {
+        a: { b: [ { c: 'f00' }, { c: 'b4r' } ] }
+      },
+      result: {
+        a: { b: [ { c: 'f00' }, { c: 'b4r' }, { c: 'baz' } ] }
+      }
+    },
+
+    {
+      assertion: 'should replace target null when source value is array',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: null },
+        f: { g: null }
+      },
+      source: {
+        a: { b: [ 3, 2, 1 ] },
+        f: { g: [] }
+      },
+      result: {
+        a: { b: [ 3, 2, 1 ] },
+        f: { g: [] }
+      }
+    },
+
+    {
+      assertion: 'should replace target primitive when source value is array',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: 3 },
+        f: { g: 'value' }
+      },
+      source: {
+        a: { b: [ 3, 2, 1 ] },
+        f: { g: [] }
+      },
+      result: {
+        a: { b: [ 3, 2, 1 ] },
+        f: { g: [] }
+      }
+    },
+
+    {
+      assertion: 'should replace target object when source value is null',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: { c: false, d: 4, e: 'value' } },
+        f: { g: { h: {} } }
+      },
+      source: {
+        a: { b: null },
+        f: { g: null }
+      },
+      result: {
+        a: { b: null },
+        f: { g: null }
+      }
+    },
+
+    {
+      assertion: 'should replace target array when source value is null',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: [ 1, 2, 3 ] },
+        f: { g: [] }
+      },
+      source: {
+        a: { b: null },
+        f: { g: null }
+      },
+      result: {
+        a: { b: null },
+        f: { g: null }
+      }
+    },
+
+    {
+      assertion: 'should keep target null when source value is null',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: null },
+        f: { g: null }
+      },
+      source: {
+        a: { b: null },
+        f: { g: null }
+      },
+      result: {
+        a: { b: null },
+        f: { g: null }
+      }
+    },
+
+    {
+      assertion: 'should replace target primitive when source value is null',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: -123 },
+        f: { g: true }
+      },
+      source: {
+        a: { b: null },
+        f: { g: null }
+      },
+      result: {
+        a: { b: null },
+        f: { g: null }
+      }
+    },
+
+    {
+      assertion: 'should replace target object when source value is primitive',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: { c: false, d: 4, e: 'value' } },
+        f: { g: { h: {} } }
+      },
+      source: {
+        a: { b: true },
+        f: { g: 3.14 }
+      },
+      result: {
+        a: { b: true },
+        f: { g: 3.14 }
+      }
+    },
+
+    {
+      assertion: 'should replace target array when source value is primitive',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: [ 1, 2, 3 ] },
+        f: { g: [] }
+      },
+      source: {
+        a: { b: null },
+        f: { g: null }
+      },
+      result: {
+        a: { b: null },
+        f: { g: null }
+      }
+    },
+
+    {
+      assertion: 'should replace target null when source value is primitive',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: null },
+        f: { g: null }
+      },
+      source: {
+        a: { b: -123 },
+        f: { g: true }
+      },
+      result: {
+        a: { b: -123 },
+        f: { g: true }
+      }
+    },
+
+    {
+      assertion: 'should replace target primitive when source value is primitive',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' },
+                  d: { type: 'integer' },
+                  e: { type: 'string' }
+                }
+              }
+            }
+          },
+          f: {
+            properties: {
+              g: {
+                properties: {
+                  h: { type: 'integer' },
+                  i: { type: 'string' },
+                  j: { type: 'boolean' }
+                }
+              }
+            }
+          }
+        }
+      },
+      target: {
+        a: { b: -123 },
+        f: { g: true }
+      },
+      source: {
+        a: { b: -456 },
+        f: { g: false }
+      },
+      result: {
+        a: { b: -456 },
+        f: { g: false }
+      }
+    }
+
+  ],
+
 
 
   /**

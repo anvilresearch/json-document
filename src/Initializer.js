@@ -340,7 +340,12 @@ class Initializer {
           var len = 0
 
           if (sLen > len) { len = sLen }
-          if (tLen > len) { len = tLen }
+          // THIS IS WRONG, CAUSED SIMPLE ARRAY INIT TO FAIL (OVERWRITE
+          // EXISTING TARGET VALUES WITH UNDEFINED WHEN SOURCE IS SHORTER THAN
+          // TARGET). LEAVING HERE UNTIL WE FINISH TESTING AND SEE WHY IT MIGHT
+          // HAVE BEEN HERE IN THE FIRST PLACE.
+          //
+          // if (tLen > len) { len = tLen }
 
           for (var ${ index } = 0; ${ index } < len; ${ index }++) {
             ${ initializer.compile() }

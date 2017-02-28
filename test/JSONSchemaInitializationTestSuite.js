@@ -1316,10 +1316,10 @@ let tests = {
 
 
   /**
-   * These tests are for a deeply nested object (two levels of nesting). They cover
-   * assignment from the input to the target, empty and false values, unexpected
-   * types, defaults, existing values on the target object, options, and unspecified
-   * properties.
+   * These tests are for a deeply nested object (two levels of nesting). They
+   * cover assignment from the input to the target, empty and false values,
+   * unexpected types, defaults, existing values on the target object, options,
+   * and unspecified properties.
    */
   'level 3 (deeply nested) object property assignment': [
 
@@ -2338,8 +2338,212 @@ let tests = {
       },
       result: {}
     }
-  ]
+  ],
 
+
+
+  /**
+   * These tests cover simple array item assignment. They cover assignment from
+   * input to target, empty and false values, unexpected types, and existing values
+   * on the target object.
+   */
+  'level 1 array items assignment (single schema)': [
+
+    {
+      assertion: 'should assign array source values of expected type to target',
+      schema: { items: { type: 'array' } },
+      target: [],
+      source: [ [], [], [], [], [], [] ],
+      result: [ [], [], [], [], [], [] ]
+    },
+
+    {
+      assertion: 'should assign boolean source values of expected type to target',
+      schema: { items: { type: 'boolean' } },
+      target: [],
+      source: [ true, false, true, false, true, false ],
+      result: [ true, false, true, false, true, false ]
+    },
+
+    {
+      assertion: 'should assign integer source values of expected type to target',
+      schema: { items: { type: 'integer' } },
+      target: [],
+      source: [ 1, 1, 2, 3, 5, 8 ],
+      result: [ 1, 1, 2, 3, 5, 8 ]
+    },
+
+    {
+      assertion: 'should assign null source values of expected type to target',
+      schema: { items: { type: 'null' } },
+      target: [],
+      source: [ null, null, null ],
+      result: [ null, null, null ]
+    },
+
+    {
+      assertion: 'should assign number source values of expected type to target',
+      schema: { items: { type: 'number' } },
+      target: [],
+      source: [ 1.23, 4.56, 7.89 ],
+      result: [ 1.23, 4.56, 7.89 ]
+    },
+
+    {
+      assertion: 'should assign object source values of expected type to target',
+      schema: { items: { type: 'object' } },
+      target: [],
+      source: [ { foo: 'bar' }, { baz: 'quux' } ],
+      result: [ { foo: 'bar' }, { baz: 'quux' } ]
+    },
+
+    {
+      assertion: 'should assign string source values of expected type to target',
+      schema: { items: { type: 'string' } },
+      target: [],
+      source: [ 'foo', 'bar', 'baz', 'quux' ],
+      result: [ 'foo', 'bar', 'baz', 'quux' ]
+    },
+
+    {
+      assertion: 'should assign undefined source values of expected type to target',
+      schema: { items: { type: 'undefined' } },
+      target: [],
+      source: [ undefined, undefined, undefined ],
+      result: [ undefined, undefined, undefined ]
+    },
+
+
+    {
+      assertion: 'should assign array source values of unexpected type to target',
+      schema: { items: { type: 'boolean' } },
+      target: [],
+      source: [ [], [], [], [], [], [] ],
+      result: [ [], [], [], [], [], [] ]
+    },
+
+    {
+      assertion: 'should assign boolean source values of unexpected type to target',
+      schema: { items: { type: 'integer' } },
+      target: [],
+      source: [ true, false, true, false, true, false ],
+      result: [ true, false, true, false, true, false ]
+    },
+
+    {
+      assertion: 'should assign integer source values of unexpected type to target',
+      schema: { items: { type: 'null' } },
+      target: [],
+      source: [ 1, 1, 2, 3, 5, 8 ],
+      result: [ 1, 1, 2, 3, 5, 8 ]
+    },
+
+    {
+      assertion: 'should assign null source values of unexpected type to target',
+      schema: { items: { type: 'number' } },
+      target: [],
+      source: [ null, null, null ],
+      result: [ null, null, null ]
+    },
+
+    {
+      assertion: 'should assign number source values of unexpected type to target',
+      schema: { items: { type: 'object' } },
+      target: [],
+      source: [ 1.23, 4.56, 7.89 ],
+      result: [ 1.23, 4.56, 7.89 ]
+    },
+
+    {
+      assertion: 'should assign object source values of unexpected type to target',
+      schema: { items: { type: 'string' } },
+      target: [],
+      source: [ { foo: 'bar' }, { baz: 'quux' } ],
+      result: [ { foo: 'bar' }, { baz: 'quux' } ]
+    },
+
+    {
+      assertion: 'should assign string source values of unexpected type to target',
+      schema: { items: { type: 'undefined' } },
+      target: [],
+      source: [ 'foo', 'bar', 'baz', 'quux' ],
+      result: [ 'foo', 'bar', 'baz', 'quux' ]
+    },
+
+    {
+      assertion: 'should assign undefined source values of unexpected type to target',
+      schema: { items: { type: 'array' } },
+      target: [],
+      source: [ undefined, undefined, undefined ],
+      result: [ undefined, undefined, undefined ]
+    },
+
+    {
+      assertion: 'should assign empty and falsy values to target',
+      schema: {
+        items: {
+          type: [
+            'array',
+            'boolean',
+            'integer',
+            'null',
+            'number',
+            'object',
+            'string',
+            'undefined'
+          ]
+        }
+      },
+      target: [],
+      source: [ [], false, 0, null, 0.00, {}, '', undefined ],
+      result: [ [], false, 0, null, 0.00, {}, '', undefined ]
+    },
+
+    {
+      // QUESTION: what does this mean for undefined values? we may need an
+      // option to overwrite/not overwrite existing array items with `undefined`.
+      assertion: 'should leave target values not present on source intact',
+      schema: {
+        items: {
+          type: [
+            'array',
+            'boolean',
+            'integer',
+            'null',
+            'number',
+            'object',
+            'string',
+            'undefined'
+          ]
+        }
+      },
+      target: [
+        undefined,
+        [],
+        false,
+        1,
+        null,
+        3.14,
+        { foo: 'bar' },
+        'original'
+      ],
+      source: [
+        5.9,
+        { baz: 'quux' },
+        true
+      ],
+      result: [
+        5.9,
+        { baz: 'quux' },
+        true,
+        1,
+        null,
+        3.14,
+        { foo: 'bar' },
+        'original'
+      ]
+    }
+  ]
 
 }
 
@@ -2361,7 +2565,7 @@ function copy (value) {
 /**
  * Run the tests
  */
-describe('JSON Schema-based Object Initialization', () => {
+describe.only('JSON Schema-based Object Initialization', () => {
   Object.keys(tests).forEach(description => {
     describe(description, () => {
       tests[description].forEach(test => {

@@ -3317,10 +3317,272 @@ let tests = {
         a: { b: -456 },
         f: { g: false }
       }
-    }
+    },
+
+    {
+      assertion: 'should assign default values when source values are not present',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'integer' }
+                },
+                default: { c: 3 }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'boolean' }
+                }
+              }
+            },
+            default: { e: { f: true } }
+          }
+        }
+      },
+      target: {},
+      source: {},
+      result: {
+        a: { b: { c: 3 } },
+        d: { e: { f: true } }
+      }
+    },
+
+    {
+      assertion: 'should assign default values of unexpected type',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                type: 'object',
+                properties: {
+                  c: { type: 'integer' },
+                  d: { type: 'string' }
+                },
+                default: 3
+              }
+            }
+          },
+          e: {
+            properties: {
+              f: {
+                type: 'array',
+                items: [
+                  {
+                    properties: {
+                      g: { type: 'boolean' }
+                    }
+                  }
+                ],
+                default: 5
+              }
+            }
+          }
+        }
+      },
+      target: {},
+      source: {},
+      result: {
+        a: {
+          b: 3
+        },
+        e: {
+          f: 5
+        }
+      }
+    },
+
+    {
+      assertion: 'should assign empty and falsy default values',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                },
+                default: undefined
+              },
+              d: {
+                properties: {
+                  e: { type: 'integer' }
+                },
+                default: null
+              },
+              f: {
+                properties: {
+                  g: { type: 'null' }
+                },
+                default: false
+              },
+              h: {
+                properties: {
+                  i: { type: 'number' }
+                },
+                default: ''
+              },
+              j: {
+                properties: {
+                  k: { type: 'string' }
+                },
+                default: 0
+              },
+              l: {
+                properties: {
+                  m: { type: 'array' },
+                },
+                default: {}
+              },
+              n: {
+                properties: {
+                  o: { type: 'object' }
+                },
+                default: []
+              }
+            }
+          }
+        }
+      },
+      target: {},
+      source: {},
+      result: {
+        a: {
+          b: undefined,
+          d: null,
+          f: false,
+          h: '',
+          j: 0,
+          l: {},
+          n: []
+        }
+      }
+    },
+
+    {
+      assertion: 'should override default values when source values are present',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'integer' }
+                },
+                default: { c: 3 }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'boolean' }
+                }
+              }
+            },
+            default: { e: { f: true } }
+          }
+        }
+      },
+      target: {},
+      source: {
+        a: { b: { c: 7 } },
+        d: { e: { f: false, g: true } }
+      },
+      result: {
+        a: { b: { c: 7 } },
+        d: { e: { f: false } }
+      }
+    },
+
+    {
+      assertion: 'should override default values with source values of unexpected type',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'boolean' }
+                },
+                default: null
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'integer' }
+                },
+                default: []
+              }
+            }
+          }
+        }
+      },
+      target: {},
+      source: {
+        a: { b: true },
+        d: { e: 'unexpected type' }
+      },
+      result: {
+        a: { b: true },
+        d: { e: 'unexpected type' }
+      }
+    },
+
+    {
+      assertion: 'should optionally skip assigning default values',
+      schema: {
+        properties: {
+          a: {
+            properties: {
+              b: {
+                properties: {
+                  c: { type: 'integer' }
+                },
+                default: { c: 3 }
+              }
+            }
+          },
+          d: {
+            properties: {
+              e: {
+                properties: {
+                  f: { type: 'boolean' }
+                }
+              }
+            },
+            default: { e: { f: true } }
+          }
+        }
+      },
+      target: {},
+      source: {},
+      options: {
+        defaults: false
+      },
+      result: {}
+    },
 
   ],
 
+
+  /**
+   * The following tests should cover various cases where a deeply nested JSON
+   * schema may have multiple default value definitions for a given path.
+   */
+  'nested schema default precedence': [
+    //
+  ],
 
 
   /**

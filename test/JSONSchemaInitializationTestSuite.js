@@ -501,6 +501,11 @@ let tests = {
       },
       result: {}
     }
+
+    // TODO
+    // should coerce values according to schema
+    // should assign uncoerceable values
+    // should optionally skip type coercion
   ],
 
   /**
@@ -1312,6 +1317,11 @@ let tests = {
       },
       result: {}
     }
+
+    // TODO
+    // should coerce values according to schema
+    // should assign uncoerceable values
+    // should optionally skip type coercion
   ],
 
 
@@ -2338,6 +2348,11 @@ let tests = {
       },
       result: {}
     }
+
+    // TODO
+    // should coerce values according to schema
+    // should assign uncoerceable values
+    // should optionally skip type coercion
   ],
 
   /**
@@ -3571,8 +3586,12 @@ let tests = {
         defaults: false
       },
       result: {}
-    },
+    }
 
+    // TODO
+    // should coerce values according to schema
+    // should assign uncoerceable values
+    // should optionally skip type coercion
   ],
 
 
@@ -3786,8 +3805,23 @@ let tests = {
         'original'
       ]
     }
+
+    // TODO
+    // should coerce values according to schema
+    // should assign uncoerceable values
+    // should optionally skip type coercion
   ]
 
+  // TODO
+  // level 2 array items assignment (single schema)
+  // level 3 array items assignment (single schema)
+  // deeply nested array branch assignment (single schema)
+  // level 1 array items assignment (indexed schema)
+  // level 2 array items assignment (indexed schema)
+  // level 3 array items assignment (indexed schema)
+  // deeply nested array branch assignment (indexed schema)
+  // object within array deep nesting
+  // array within object deep nesting
 }
 
 /**
@@ -3808,7 +3842,7 @@ function copy (value) {
 /**
  * Run the tests
  */
-describe.only('JSON Schema-based Object Initialization', () => {
+describe('JSON Schema-based Object Initialization', () => {
   Object.keys(tests).forEach(description => {
     describe(description, () => {
       tests[description].forEach(test => {

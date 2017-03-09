@@ -19,6 +19,12 @@ Model and manipulate data with ES6 classes, JSON Schema initialization and valid
 
 Alpha code undergoing rigorous testing and refactoring prior to first production release.
 
+## Known Issues
+
+* Initializer
+	* Arrays nested within arrays
+	* Multiple defaults in the same tree
+
 ## Install
 
 From npm registry:

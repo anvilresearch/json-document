@@ -18,7 +18,7 @@ const RECOVER = 1
  * Defines a means to declaratively translate between object
  * representations using JSON Pointer syntax.
  */
-class JSONMapping extends Map {
+class JSONMapping {
 
   /**
    * Constructor
@@ -27,11 +27,14 @@ class JSONMapping extends Map {
    * @param {Object} mapping
    */
   constructor (mapping) {
-    super()
+    Object.defineProperty(this, 'mapping', {
+      enumerable: false,
+      value: new Map()
+    })
 
     Object.keys(mapping).forEach(key => {
       let value = mapping[key]
-      this.set(
+      this.mapping.set(
         new JSONPointer(key, RECOVER),
         new JSONPointer(value, RECOVER)
       )
@@ -47,7 +50,7 @@ class JSONMapping extends Map {
    * @param {Object} source
    */
   map (target, source) {
-    this.forEach((right, left) => {
+    this.mapping.forEach((right, left) => {
       left.add(target, right.get(source))
     })
   }
@@ -61,7 +64,7 @@ class JSONMapping extends Map {
    * @param {Object} target
    */
   project (source, target) {
-    this.forEach((right, left) => {
+    this.mapping.forEach((right, left) => {
       right.add(target, left.get(source))
     })
   }

@@ -163,7 +163,7 @@ class JSONPointer {
           current.push(value)
         } else if (Array.isArray(current)) {
           current.splice(token, 0, value)
-        } else {
+        } else if (value !== undefined) {
           current[token] = value
         }
 

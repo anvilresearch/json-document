@@ -7,6 +7,13 @@
 const formats = require('./Formats')
 
 /**
+ * For variable iterator counter
+ *
+ * @type {number}
+ */
+let indexCount = 0
+
+/**
  * Validator
  *
  * Compile an object describing a JSON Schema into a validation function.
@@ -55,6 +62,15 @@ class Validator {
     `
 
     return new Function('data', body)
+  }
+
+  /**
+   * Return current iterator index counter and increase value
+   *
+   * @returns {number}
+   */
+  static get counter() {
+      return indexCount++
   }
 
   /**
@@ -994,13 +1010,14 @@ class Validator {
     ) {
       let subschema = additionalItems
       let validator = new Validator(subschema)
+      let counter = Validator.counter
 
       block += `
         // additional items
         ${this.push()}
 
-        for (var i = ${items.length}; i <= container.length; i++) {
-          value = container[i]
+        for (var i${counter} = ${items.length}; i${counter} <= container.length; i${counter}++) {
+          value = container[i${counter}]
           ${validator.compile()}
         }
 
@@ -1067,14 +1084,15 @@ class Validator {
     } else if (typeof items === 'object' && items !== null) {
       let subschema = items
       let validator = new Validator(subschema)
+      let counter = Validator.counter
 
       block += `
         // items
         ${this.push()}
 
-        for (var i = 0; i < container.length; i++) {
+        for (var i${counter} = 0; i${counter} < container.length; i${counter}++) {
           // read array element
-          value = container[i]
+          value = container[i${counter}]
           ${validator.compile()}
         }
 
